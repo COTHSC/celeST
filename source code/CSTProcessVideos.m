@@ -39,6 +39,11 @@ sliderVert = uicontrol('parent',mainFigure,'style','slider','position',[mainW-20
 set(mainFigure, 'color', get(mainPanel,'backgroundcolor'));
 set(mainFigure,'colormap',gray);
 
+function getError(em)
+  fprintf(fileToLog, ['exception message: ', em.message, '\n']);
+  fprintf(fileToLog, ['exception identifier ', em.identifier, '\n']);
+  end
+
 % ----------
 % Filters
 % ----------
@@ -265,7 +270,8 @@ waitfor(mainFigure,'BeingDeleted','on');
             catch em
                 if flagRobustness
                     fprintf(fileToLog, ['***   There was an error tracking file number: ',num2str(currentFrameForProcessing),' , skipping this file. ***','\n']);
-                    fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
+                    getError(em);
+     %fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
                 else
                     rethrow(em)
                 end

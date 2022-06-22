@@ -15,6 +15,10 @@ if traceOn; fprintf(fileToLog, ['processing frame ', num2str(currentFrameForProc
 
 if plotAllOn; hold(axesImage, 'on');end
 
+function getError(em)
+  fprintf(fileToLog, ['exception message: ', em.message, '\n']);
+  fprintf(fileToLog, ['exception identifier ', em.identifier, '\n']);
+  end
 % -------------------
 % Initialize variables
 % -------------------
@@ -497,7 +501,6 @@ for wormCandidate = 1:50
         if timingOn; timings(7) = timings(7) + toc ; timingsTime(7) = timingsTime(7) + 1 ; tic; end
         for numtmp = 1:numForgotten
             currentNum = numel(find(labelForgotten == numtmp));
-            fprintf(fileToLog, ['current num is: \n'], currentNum, '\n');
 
             % ------------
             % Only consider regions of sufficient size

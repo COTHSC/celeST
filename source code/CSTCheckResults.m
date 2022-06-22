@@ -52,8 +52,8 @@ wormSwitchIdx =[];
 % ----------
 % Variables to define blocks and validity
 % ----------
-listOfWorms.manualInvalid = [];
-listOfWorms.manualValid = [];
+listOfWorms{1}.manualInvalid = [];
+listOfWorms{1}.manualValid = [];
 measures.manualSeparators = [];
 measures.separators = [];
 tmpAfterSelfOverlap = [];
@@ -670,7 +670,7 @@ waitfor(mainFigure,'BeingDeleted','on');
         checkWormsAgainstGlare
         computeBlockSeparatorsAndValidity;
         selectWorm
-        
+
         function newEllipse
             hEllipses{end+1} = imellipse(hAxePopup);
         end
@@ -772,7 +772,7 @@ waitfor(mainFigure,'BeingDeleted','on');
             return
         end
         choice = questdlg('Are you sure you want to switch the worms?','Switch worms','Switch','Cancel','Cancel');
-        
+
         if strcmp(choice,'Switch')
             worm1 = currentWorm;
             worm2 = wormSwitchIdx(get(popWormSwitch,'value'));
@@ -1149,7 +1149,7 @@ waitfor(mainFigure,'BeingDeleted','on');
         else
             set(hMainImage, 'cdata', currentImage);
         end
-        
+
         cbl = listOfWorms.skel{currentWorm}{currentFrame};
         width = listOfWorms.width{currentWorm}{currentFrame};
         bbox = [ max(1,min(xImage, min(floor(cbl(1,:)-width)-displayAroundWorms))), ... % xMin
@@ -1208,14 +1208,14 @@ waitfor(mainFigure,'BeingDeleted','on');
             end
         end
         hold(hAxeAllVideo,'off')
-        
+
         edges = cbl(:,[2:end,end]) - cbl(:,[1:end-1,end-1]);
         edges = [width; width] .* edges ./ ([1;1]*hypot(edges(1,:), edges(2,:)));
         normals = [-edges(2,:) ; edges(1,:)];
         tmpDraw = [ cbl(:,1) - edges(:,1) , cbl + normals , cbl(:,end) + edges(:,end) , cbl(:,end:-1:1) - normals(:,end:-1:1) , cbl(:,1) - edges(:,1)];
         tmpDraw(1,:) = tmpDraw(1,:) - bbox(1)+1;
         tmpDraw(2,:) = tmpDraw(2,:) - bbox(3)+1;
-        
+
         if (isempty(hSubImage) || ~ishandle(hSubImage))
             hSubImage = image('parent', hAxeCurrentWorm, 'cdata', currentImage(bbox(3):bbox(4), bbox(1):bbox(2)));
             hold(hAxeCurrentWorm, 'on')
@@ -1291,7 +1291,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                 end
                 % ...............
             end
-            
+
             currentFrame = 1;
             set(editCurrentFrame, 'string', int2str(currentFrame));
             try
@@ -1326,7 +1326,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                 % ------------
                 if ( fileDB(currentVideo).measured && isfield(listOfWorms,'outOfLengths'))
                     measures = CSTreadMeasuresFromTXT(fileDB(currentVideo).name, true);
-                    
+
                     if isfield(measures, 'ratioThrashMedian')
                         measures = rmfield(measures, 'ratioThrashMedian');
                     end
@@ -1336,7 +1336,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                     if isfield(measures, 'ratioAngleThrashMedian')
                         measures = rmfield(measures, 'ratioAngleThrashMedian');
                     end
-                    
+
                     tmpAfterSelfOverlap = [false(nbOfWorms,1) , listOfWorms.selfOverlap(:,1:end-1) & ~listOfWorms.selfOverlap(:,2:end) ];
                 else
                     % ------------
@@ -1393,8 +1393,8 @@ waitfor(mainFigure,'BeingDeleted','on');
                             long = cumsum([0,hypot(currentCBL(1,2:end)-currentCBL(1,1:end-1), currentCBL(2,2:end)-currentCBL(2,1:end-1))]);
                             listOfWorms.lengthWorms(ww,ff) = long(end);
                             long = long / long(end);
-                            currentCBL = interp1q(long', currentCBL', subSamp)';
-                            currentWidth = interp1q(long', listOfWorms.width{ww}{ff}', subSamp)';
+                            currentCBL = interp1(long', currentCBL', subSamp)';
+                            currentWidth = interp1(long', listOfWorms.width{ww}{ff}', subSamp)';
                             listOfWorms.skel{ww}{ff} = currentCBL;
                             listOfWorms.width{ww}{ff} = currentWidth;
                             listOfWorms.positionCenterX(ww,ff) = currentCBL(1, 1+nbSamplesCBL/2);
@@ -1460,7 +1460,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                             else
                                 listOfWorms.overlapPrev(ww, ff) = 1;
                             end
-                            
+
                             % =========
                             % Detect overlap with other worms
                             % =========
