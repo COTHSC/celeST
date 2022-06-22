@@ -1174,7 +1174,7 @@ waitfor(mainFigure,'BeingDeleted','on');
         end
         if (length(hMainAllWorms) < currentWorm || isempty(hMainAllWorms(currentWorm)) || ~ishandle(hMainAllWorms(currentWorm)))
             hMainAllWorms(currentWorm) = plot(hAxeAllVideo,cbl(1,:), cbl(2,:), 'color', colour,'linewidth',2);
-            hMainTextWorms(currentWorm) = text(tmp(1), tmp(2), num2str(currentWorm),'parent',hAxeAllVideo,'color', 'r','FontSize',12, 'fontweight' ,' bold');
+            hMainTextWorms(currentWorm) = text(tmp(1), tmp(2), num2str(currentWorm),'parent',hAxeAllVideo,'color', 'r','FontSize',12, 'fontweight' ,'bold');
             hMainBox = plot(hAxeAllVideo,bbox([1 1 2 2 1]), bbox([3 4 4 3 3]),'-r');
         else
             set(hMainAllWorms(currentWorm), 'xdata', cbl(1,:), 'ydata', cbl(2,:), 'color', colour,'linewidth',2);
@@ -1203,7 +1203,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                     hMainTextWorms(otherWorm) = text(tmp(1), tmp(2), num2str(otherWorm),'parent',hAxeAllVideo,'color', 'r','FontSize',12, 'fontweight' ,'bold');
                 else
                     set(hMainAllWorms(otherWorm), 'xdata', listOfWorms.skel{otherWorm}{currentFrame}(1,:), 'ydata', listOfWorms.skel{otherWorm}{currentFrame}(2,:), 'color', [0.5 0.5 0.5],'linewidth',1);
-                    set(hMainTextWorms(otherWorm), 'position', tmp,'color', 'r','FontSize',12, 'fontweight' ,' bold');
+                    set(hMainTextWorms(otherWorm), 'position', tmp,'color', 'r','FontSize',12, 'fontweight' ,'bold');
                 end
             end
         end
