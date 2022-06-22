@@ -1,5 +1,4 @@
 function [listOfMeasures, listOfWormIdx] = CSTreadMeasuresFromTXT(videoName, flagShowGUI, listOfFields, flagOnlyUsable, listOfWormsToLoad)
-
 % Copyright (c) 2013 Rutgers
 % Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 % The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -7,7 +6,7 @@ function [listOfMeasures, listOfWormIdx] = CSTreadMeasuresFromTXT(videoName, fla
 
 % Read segmentation listOfMeasures from txt file, returns a struct array with all the fields
 
-global filenames CeleSTVersion;
+global filenames;
 
 if nargin <= 1
     flagShowGUI = true;
@@ -30,19 +29,8 @@ if fid >= 3
     if (flagShowGUI)
         hWaitBar = waitbar(0,'Loading measures...');
     end
-    
-    line1 = fgetl(fid);
-    fileVersion = sscanf(line1, 'version %s');
-    if isempty(fileVersion)
-        nbOfFields = sscanf(fgetl(fid), 'fields %d');
-    else
-        if ~strcmp(fileVersion, CeleSTVersion)
-            updateData
-        end
-        nbOfFields = sscanf(fgetl(fid), 'fields %d');
-    end
+    nbOfFields = sscanf(fgetl(fid), 'fields %d');
     nbOfWorms = sscanf(fgetl(fid), 'worms %d');
-    
     for ff = 1:nbOfFields
         field = fgetl(fid);
         if strcmp(field, 'status')
@@ -68,7 +56,7 @@ if fid >= 3
             for ww = 1:nbOfWorms
                 listOfMeasures.(field){ww} = str2num(fgetl(fid)); %#ok<ST2NM>
             end
-            
+
         else
             if flagOnlyUsable
                 line = fgetl(fid);
@@ -80,9 +68,9 @@ if fid >= 3
                 end
             else
                 listOfMeasures.(field) = sscanf(fgetl(fid), '%f ');
-                if ~flagLoadAllWorms
-                    listOfMeasures.(field) = listOfMeasures.(field)(listOfWormsToLoad);
-                end
+                    if ~flagLoadAllWorms
+                        listOfMeasures.(field) = listOfMeasures.(field)(listOfWormsToLoad);
+                    end
             end
         end
     end
@@ -106,7 +94,7 @@ if fid >= 3
         end
     end
     
-    if flagShowGUI && isgraphics(hWaitBar)
+    if flagShowGUI
         close(hWaitBar)
         pause(0.001)
     end

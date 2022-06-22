@@ -1,5 +1,4 @@
 function CSTProcessVideos
-
 % Copyright (c) 2013 Rutgers
 % Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 % The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -7,7 +6,7 @@ function CSTProcessVideos
 
 % This function creates a window displaying sequences (frame by frame), where the user can launch the processing per sequence, and manually draw and edit the segmented worms.
 
-global filenames fileDB filterNames filterSelection flagRobustness fileToLog currentImage timingOn timings timingsLabel timingsTime zoneOkForCompleteWorms zoneOkForStartingWorms listOfWorms traceOn colFtlWell mainPnlW mainPnlH;
+global fileDB filterSelection flagRobustness fileToLog currentImage timingOn timings timingsLabel timingsTime zoneOkForCompleteWorms zoneOkForStartingWorms listOfWorms traceOn colFtlWell mainPnlW mainPnlH;
 
 % ============
 % CREATE THE INTERFACE
@@ -24,7 +23,6 @@ listOfPoints = [];
 handleCircle = [];
 idxVideo = [];
 flagOkToDrawWell = false;
-flagCancel = false;
 videoBeingProcessed = 0;
 totalFrames = 0;
 wellMarginSize = 6;
@@ -49,9 +47,23 @@ filterW = 150;
 hFilters = filterH + 20;
 yFilters = mainPnlH - hFilters - 5;
 pnlFilters = uipanel('parent', mainPanel,'BorderType', 'none','units','pixels', 'position', [1 yFilters mainPnlW hFilters]);
-for idxtmp = 0:length(filterNames)-1
-    uicontrol('parent',pnlFilters,'style','text','string',filterNames{idxtmp+1},'position',[idxtmp*filterW filterH filterW 20])
-    flt.(filterNames{idxtmp+1}) = uicontrol('parent',pnlFilters,'style','listbox','String',{''},'max',2,'min',0,'position',[idxtmp*filterW 0 filterW filterH],'callback',@setFilteredList);
+listFilters = fieldnames(fileDB);
+idxtmp = 1;
+while idxtmp <= length(listFilters)
+    if strcmp(listFilters{idxtmp},'name') || strcmp(listFilters{idxtmp},'directory') || strcmp(listFilters{idxtmp},'format')...
+            || strcmp(listFilters{idxtmp},'frames_per_second') || strcmp(listFilters{idxtmp},'mm_per_pixel') || strcmp(listFilters{idxtmp},'set')...
+            || strcmp(listFilters{idxtmp},'duration') || strcmp(listFilters{idxtmp},'images') || strcmp(listFilters{idxtmp},'glareZones')...
+            || strcmp(listFilters{idxtmp},'note') || strcmp(listFilters{idxtmp},'worms') || strcmp(listFilters{idxtmp},'well')...
+            || strcmp(listFilters{idxtmp},'month') || strcmp(listFilters{idxtmp},'day') || strcmp(listFilters{idxtmp},'year')
+        listFilters(idxtmp) = [];
+    else
+        idxtmp = idxtmp + 1;
+    end
+end
+
+for idxtmp = 0:length(listFilters)-1
+    uicontrol('parent',pnlFilters,'style','text','string',listFilters{idxtmp+1},'position',[idxtmp*filterW filterH filterW 20])
+    flt.(listFilters{idxtmp+1}) = uicontrol('parent',pnlFilters,'style','listbox','String',{''},'max',2,'min',0,'position',[idxtmp*filterW 0 filterW filterH],'callback',@setFilteredList);
 end
 
 
@@ -80,13 +92,13 @@ listVideosToProc =  uicontrol('parent',mainPanel,'style','listbox','String',{},'
 listVideosToProcIdx = [];
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Select all', 'position', [3*filterW-20 yVideos+3*filterH filterW-10 30], 'callback', @(a,b) set(listVideosToProc, 'value', 1:length(get(listVideosToProc,'string'))))
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Deselect all', 'position', [3*filterW-20+filterW+10 yVideos+3*filterH filterW-10 30], 'callback', @(a,b) set(listVideosToProc, 'value', []))
-btnProcess = uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Process all the videos listed above', 'position', [3*filterW-20 yVideos-50 2*filterW 30],'Interruptible', 'on', 'callback', @launchProcessing);
-btnProcessInterrupt = uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Cancel', 'position', [3*filterW-20 yVideos-80 2*filterW 30], 'enable', 'off', 'callback', @launchProcessingInterrupt);
-txtProcStatus = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Processing: stopped','position',[3*filterW-20 yVideos-100 2*filterW 20]);
-txtProcTotal = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Videos processed: 0 / 0','position',[3*filterW-20 yVideos-120 2*filterW 20]);
-uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Current video:','position',[3*filterW-20 yVideos-140 filterW 20]);
-txtProcCurrent = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','< no video >','position',[3*filterW-20 yVideos-160 2*filterW 20]);
-txtProcFrame = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Frames processed: 0 / 0','position',[3*filterW-20 yVideos-180 2*filterW 20]);
+btnProcess = uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Process all the videos listed above', 'position', [3*filterW-20 yVideos-50 2*filterW 30], 'callback', @launchProcessing);
+txtProcStatus = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Processing: stopped','position',[3*filterW-20 yVideos-370+280 2*filterW 20]);
+txtProcTotal = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Videos processed: 0 / 0','position',[3*filterW-20 yVideos-370+260 2*filterW 20]);
+uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Current video:','position',[3*filterW-20 yVideos-370+240 filterW 20]);
+txtProcCurrent = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','< no video >','position',[3*filterW-20 yVideos-370+220 2*filterW 20]);
+txtProcFrame = uicontrol('parent', mainPanel, 'style' ,'text', 'FontWeight', 'bold','HorizontalAlignment', 'left','String','Frames processed: 0 / 0','position',[3*filterW-20 yVideos-370+200 2*filterW 20]);
+
 
 % ----------
 % List of videos with no well
@@ -105,19 +117,8 @@ listVideosWellIdx = [];
 % ------------
 % Image
 % ------------
-uicontrol('parent',mainPanel,'style','text','HorizontalAlignment', 'left','String','Left click = add a point on the border of the well | Right click (ctrl+click on Mac) = remove the latest point','position',[5*filterW yVideos-30+2*filterH defaultImSize(1) 20]);
-axesImage = axes('parent',mainPanel,'units','pixels','Position',[5*filterW yVideos-30+2*filterH-defaultImSize(2) defaultImSize(1) defaultImSize(2)],'XTick',[],'YTick',[]);
-
-% ------------
-% Handle deprecated method
-% ------------
-if verLessThan('matlab','8.4.0')
-    set(axesImage,'drawmode','fast');
-else
-    axesImage.SortMethod = 'childorder';
-end
-
-
+uicontrol('parent',mainPanel,'style','text','HorizontalAlignment', 'left','String','Left click = add a point on the border of the well  --- Right click = remove the latest point','position',[5*filterW yVideos-30+2*filterH defaultImSize(1) 20]);
+axesImage = axes('parent',mainPanel,'sortmethod','childorder','units','pixels','Position',[5*filterW yVideos-30+2*filterH-defaultImSize(2) defaultImSize(1) defaultImSize(2)],'XTick',[],'YTick',[]);
 blankImage = zeros(defaultImSize(2), defaultImSize(1));
 set(axesImage,'children',imagesc(blankImage),'visible','off');
 
@@ -160,7 +161,7 @@ waitfor(mainFigure,'BeingDeleted','on');
         %-----------------------
         % call for processing current image here
         if timingOn; tic; end
-        
+
         imageFiles = dir(fullfile(fileDB(videoBeingProcessed).directory,['*.',fileDB(videoBeingProcessed).format]));
         % ----------------
         % Special case: when images have filenames with different lengths
@@ -205,9 +206,9 @@ waitfor(mainFigure,'BeingDeleted','on');
             maxX = fileDB(videoBeingProcessed).well(1);
             maxY = fileDB(videoBeingProcessed).well(2);
             newRayon = fileDB(videoBeingProcessed).well(3);
-            
+
             disp(['Process sequence: ', num2str(maxX), ' - ' , num2str(maxY), ' - ' , num2str(newRayon) ]);
-            
+
             zoneOkForCompleteWorms = (  repmat((1-maxX:imWidth-maxX).^2,imHeight,1) + repmat((1-maxY:imHeight-maxY)'.^2, 1, imWidth) <= (newRayon - wellMarginSize).^2 );
             zoneOkForStartingWorms = (  repmat((1-maxX:imWidth-maxX).^2,imHeight,1) + repmat((1-maxY:imHeight-maxY)'.^2, 1, imWidth) <= (newRayon - wellMarginSize).^2 );
         end
@@ -248,9 +249,6 @@ waitfor(mainFigure,'BeingDeleted','on');
         if timingOn; timings(6) = timings(6) + toc ; timingsTime(6) = timingsTime(6) + 1 ; tic; end
         for iter = 1:nbOfFrames-1
             pause(0.001)
-            if flagCancel
-                return
-            end
             currentFrameForProcessing = currentFrameForProcessing + 1;
             set(txtProcFrame, 'string', ['Frames processed: ', num2str(currentFrameForProcessing), ' / ', num2str(totalFrames)]);
             if timingOn; tic; end
@@ -276,7 +274,6 @@ waitfor(mainFigure,'BeingDeleted','on');
         fileDB(videoBeingProcessed).worms = length(listOfWorms.skel);
         fileDB(videoBeingProcessed).segmented = true;
         try
-            disp('Writing Segmentation Results...')
             CSTwriteSegmentationToTXT(listOfWorms, fileDB(videoBeingProcessed).name);
         catch em
             if flagRobustness
@@ -285,11 +282,10 @@ waitfor(mainFigure,'BeingDeleted','on');
                 catch %#ok<CTCH>
                     fprintf(fileToLog, ['***   There was an error saving the xml results of sequence index: ',num2str(videoBeingProcessed),' ***','\n']);
                 end
-                fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
+                %fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
             else
                 rethrow(em)
             end
-            generateReport(em)
         end
         if traceOn; fprintf(fileToLog, ['end of processing sequence ', num2str(videoBeingProcessed),'\n']); end
         for tt = 1:length(timingsLabel)
@@ -299,25 +295,11 @@ waitfor(mainFigure,'BeingDeleted','on');
 
 
     function launchProcessing(hObject,eventdata)
-        flagFinishedProcessing = false;
         if ~isempty(listVideosToProcIdx)
-            set(btnProcessInterrupt, 'enable', 'on')
             % if some videos have no well, ask for confirmation
             if ~isempty(get(listVideosNoWell, 'string'))
                 button = questdlg('Some videos have no defined swim well. Processing them might take longer and be less reliable. Process all videos anyway?','CeleST','Process','Cancel','Cancel');
                 if strcmp(button, 'Cancel')
-                    set(btnProcessInterrupt, 'enable', 'off');
-                    return
-                end
-            end
-            if any([fileDB(listVideosToProcIdx).segmented]);
-                process = questdlg('Some videos have already been processed and segmented. Old segmentation and measures data will be lost. Process all videos anyway?','CeleST','Process','Cancel','Cancel');
-                if strcmp(process, 'Process')
-                    for seg=1:length(listVideosToProcIdx)
-                        fileDB(listVideosToProcIdx(seg)).segmented = 0;
-                    end
-                elseif strcmp(process, 'Cancel')
-                    set(btnProcessInterrupt, 'enable', 'off');
                     return
                 end
             end
@@ -327,115 +309,77 @@ waitfor(mainFigure,'BeingDeleted','on');
             for item = 1:length(listToDisable)
                 set(listToDisable{item}, 'enable', 'off');
             end
-            try
-                for currentVideoIdx = 1:length(listVideosToProcIdx)
-                    omega=[];
-                    videoBeingProcessed = listVideosToProcIdx(currentVideoIdx);
-                    set(txtProcTotal, 'string' , ['Videos processed: ',num2str(currentVideoIdx),' / ', num2str(length(listVideosToProcIdx))]);
-                    % if already processed, move on
-                    if ~fileDB(videoBeingProcessed).segmented
-                        imageFiles = dir(fullfile(fileDB(videoBeingProcessed).directory,['*.',fileDB(videoBeingProcessed).format]));
-                        totalFrames = length(imageFiles);
-                        if totalFrames ~= 0
-                            cla(axesImage);
-                            currentImageForDisplay = imread( fullfile( fileDB(videoBeingProcessed).directory, imageFiles(1).name) );
-                            imagesc(currentImageForDisplay,'parent', axesImage);
-                            hold(axesImage, 'on');
-                            if ~isempty(fileDB(videoBeingProcessed).well)
-                                if ischar(fileDB(videoBeingProcessed).well)
-                                    fileDB(videoBeingProcessed).well = str2num(fileDB(videoBeingProcessed).well); %#ok<*ST2NM>
-                                end
-                                omega(1) = fileDB(videoBeingProcessed).well(1);
-                                omega(2) = fileDB(videoBeingProcessed).well(2);
-                                radius = fileDB(videoBeingProcessed).well(3);
-                                handleCircle = plot(axesImage, omega(1) + radius*cos(2*pi*(0:200)/200), omega(2) + radius*sin(2*pi*(0:200)/200), '-r', 'linewidth', 2);
-                                pause(0.01)
+            %# //try
+            for currentVideoIdx = 1:length(listVideosToProcIdx)
+                videoBeingProcessed = listVideosToProcIdx(currentVideoIdx);
+                set(txtProcTotal, 'string' , ['Videos processed: ',num2str(currentVideoIdx),' / ', num2str(length(listVideosToProcIdx))]);
+                % if already processed, move on
+                if ~fileDB(videoBeingProcessed).segmented
+                    imageFiles = dir(fullfile(fileDB(videoBeingProcessed).directory,['*.',fileDB(videoBeingProcessed).format]));
+                    totalFrames = length(imageFiles);
+                    if ~isempty(totalFrames)
+                        cla(axesImage);
+                        currentImageForDisplay = imread( fullfile( fileDB(videoBeingProcessed).directory, imageFiles(1).name) );
+                        imagesc(currentImageForDisplay,'parent', axesImage);
+                        hold(axesImage, 'on');
+                        if ~isempty(fileDB(videoBeingProcessed).well)
+                            if ischar(fileDB(videoBeingProcessed).well)
+                                fileDB(videoBeingProcessed).well = str2num(fileDB(videoBeingProcessed).well); %#ok<*ST2NM>
                             end
-                            set(axesImage,'XTick',[],'YTick',[]);
-                            axis(axesImage, 'equal');
-                            [yImage, xImage] = size(currentImageForDisplay);
-                            axis(axesImage, [1,xImage, 1,yImage]);
-                            set(txtProcCurrent, 'string', fileDB(videoBeingProcessed).name);
-                            set(txtProcFrame, 'string', ['Frames processed: 0 / ', num2str(totalFrames)]);
-                            pause(0.001)
-                            if ~isempty(omega)
-                                disp(['Launch processing: ', num2str(omega(1)), ' - ' , num2str(omega(2)), ' - ' , num2str(radius) ]);
-                            else
-                                disp('Launch processing: No Well');
-                            end
-                            processSequence
-                            if flagCancel
-                                break
-                            else
-                                disp('processing finished')
-                            end
+                            omega(1) = fileDB(videoBeingProcessed).well(1);
+                            omega(2) = fileDB(videoBeingProcessed).well(2);
+                            radius = fileDB(videoBeingProcessed).well(3);
+                            handleCircle = plot(axesImage, omega(1) + radius*cos(2*pi*(0:200)/200), omega(2) + radius*sin(2*pi*(0:200)/200), '-r', 'linewidth', 2);
+                            pause(0.01)
                         end
-                        flagFinishedProcessing = true;
+                        set(axesImage,'XTick',[],'YTick',[]);
+                        axis(axesImage, 'equal');
+                        [yImage, xImage] = size(currentImageForDisplay);
+                        axis(axesImage, [1,xImage, 1,yImage]);
+                        set(txtProcCurrent, 'string', fileDB(videoBeingProcessed).name);
+                        set(txtProcFrame, 'string', ['Frames processed: 0 / ', num2str(totalFrames)]);
+                        pause(0.001)
+                        %disp(['Launch processing: ', num2str(omega(1)), ' - ' , num2str(omega(2)), ' - ' , num2str(radius) ]);
+                        processSequence
                     end
-                    if(fileDB(listVideosToProcIdx(currentVideoIdx)).measured)
-                            delete(fullfile(filenames.measures, ['wormMeas_',fileDB(listVideosToProcIdx(currentVideoIdx)).name,'.txt']));
-                            fileDB(listVideosToProcIdx(seg)).measured = 0;
-                    end  
-                end
-            catch em
-                if flagRobustness
-                    fprintf(fileToLog, ['***   There was an error during processing, stopping all processing. ***','\n']);
-                    fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
-                else
-                    rethrow(em)
                 end
             end
-        end
-        if flagFinishedProcessing || flagCancel
-            if flagFinishedProcessing
-                set(txtProcStatus, 'string', 'Processing: finished');
-            end
+            %# //catch em
+            %# //    if flagRobustness
+            %# //        fprintf(fileToLog, ['***   There was an error during processing, stopping all processing. ***','\n']);
+            %# //        %# //fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
+            %# //    else
+            %# //        rethrow(em)
+            %# //    end
+            %# //end
+            set(txtProcStatus, 'string', 'Processing: finished');
             for item = 1:length(listToDisable)
                 set(listToDisable{item}, 'enable', 'on');
             end
-            set(btnProcessInterrupt, 'enable', 'off')
-        end
-        
-        flagCancel = false;
-        
-    end
-
-
-    function launchProcessingInterrupt(hObject,eventdata)
-        response = questdlg('Would you like to cancel your current video processing or wait for it to finish?','Cancel Processing','Cancel','Don''t Cancel','Don''t Cancel');
-        if strcmp(response, 'Cancel')
-            flagCancel = true;
         end
     end
+
 
     function selectNoWell(hObject, eventdata)
-        try
-            tmp = get(listVideosNoWell, 'value');
-            if isempty(get(listVideosNoWell,'string'))
-                set(listVideosNoWell, 'value',[]);
-            else
-                set(listVideosNoWell, 'value', min(tmp(1),length(get(listVideosNoWell,'string'))));
-            end
-            set(listVideosWell,'value',[]);
-            showVideo
-        catch exception
-            generateReport(exception)
+        tmp = get(listVideosNoWell, 'value');
+        if isempty(get(listVideosNoWell,'string'))
+            set(listVideosNoWell, 'value',[]);
+        else
+            set(listVideosNoWell, 'value', min(tmp(1),length(get(listVideosNoWell,'string'))));
         end
+        set(listVideosWell,'value',[]);
+        showVideo
     end
 
     function selectWell(hObject, eventdata)
-        try
-            tmp = get(listVideosWell, 'value');
-            if isempty(get(listVideosWell,'string'))
-                set(listVideosWell, 'value',[]);
-            else
-                set(listVideosWell, 'value', min(tmp(1),length(get(listVideosWell,'string'))));
-            end
-            set(listVideosNoWell,'value',[]);
-            showVideo
-        catch exception
-            generateReport(exception)
+        tmp = get(listVideosWell, 'value');
+        if isempty(get(listVideosWell,'string'))
+            set(listVideosWell, 'value',[]);
+        else
+            set(listVideosWell, 'value', min(tmp(1),length(get(listVideosWell,'string'))));
         end
+        set(listVideosNoWell,'value',[]);
+        showVideo
     end
 
 
@@ -481,84 +425,88 @@ waitfor(mainFigure,'BeingDeleted','on');
     end
 
 
-% ------------
-% Mouse button down
-% ------------
+    % ------------
+    % Mouse button down
+    % ------------
     function downMouse(hObject,eventdata)
-        try
-            if (get(get(mainFigure,'CurrentObject'), 'parent') == axesImage) && (~isempty(idxVideo)) && flagOkToDrawWell
-                if strcmp(get(hObject,'SelectionType'),'normal')
-                    % ------------
-                    % left click: add a point
-                    % ------------
-                    if size(listOfPoints,2) < 3
-                        newPoint = get(axesImage, 'CurrentPoint');
-                        listOfPoints(:,end+1) = [newPoint(1,1) ; newPoint(1,2)];
-                        handlesPoints(end+1) = plot(listOfPoints(1,:), listOfPoints(2,:), '*r');
-                        if size(listOfPoints,2) > 2
-                            [omega,radius] = getCenterFromManyPoints(listOfPoints);
-                            omega = fix(omega);
-                            radius = fix(radius);
-                            if ~isempty(handleCircle) && ishandle(handleCircle)
-                                delete(handleCircle);
-                                handleCircle = [];
-                            end
-                            handleCircle = plot(omega(1) + radius*cos(2*pi*(0:200)/200), omega(2) + radius*sin(2*pi*(0:200)/200), '-r', 'linewidth', 2);
-                            fileDB(idxVideo).well = [omega(1), omega(2), radius];
-                            fileDB(idxVideo).mm_per_pixel = 5/fileDB(idxVideo).well(3);
-                        end
+        if (get(get(mainFigure,'CurrentObject'), 'parent') == axesImage) && (~isempty(idxVideo)) && flagOkToDrawWell
+            if strcmp(get(hObject,'SelectionType'),'normal')
+                % ------------
+                % left click: add a point
+                % ------------
+                newPoint = get(axesImage, 'CurrentPoint');
+                listOfPoints(:,end+1) = [newPoint(1,1) ; newPoint(1,2)];
+                handlesPoints(end+1) = plot(listOfPoints(1,:), listOfPoints(2,:), '*r');
+                if size(listOfPoints,2) >= 3
+                    [omega,radius] = getCenterFromManyPoints(listOfPoints);
+                    omega = fix(omega);
+                    radius = fix(radius);
+                    if ~isempty(handleCircle) && ishandle(handleCircle)
+                        delete(handleCircle);
+                        handleCircle = [];
                     end
-                else
-                    % ------------
-                    % right click: remove a point
-                    % ------------
-                    if ~isempty(listOfPoints)
-                        listOfPoints(:,end) = [];
-                        delete(handlesPoints(end));
-                        handlesPoints(end) = [];
-                        fileDB(idxVideo).well = [];
-                        fileDB(idxVideo).mm_per_pixel = 1;
-                        if ~isempty(handleCircle) && ishandle(handleCircle)
-                            delete(handleCircle);
-                            handleCircle = [];
-                        end
+                    handleCircle = plot(omega(1) + radius*cos(2*pi*(0:200)/200), omega(2) + radius*sin(2*pi*(0:200)/200), '-r', 'linewidth', 2);
+                    fileDB(idxVideo).well = [omega(1), omega(2), radius];
+                    fileDB(idxVideo).mm_per_pixel = 5/fileDB(idxVideo).well(3);
+                end
+            else
+                % ------------
+                % right click: remove a point
+                % ------------
+                if ~isempty(listOfPoints)
+                    listOfPoints(:,end) = [];
+                    delete(handlesPoints(end));
+                    handlesPoints(end) = [];
+                    fileDB(idxVideo).well = [];
+                    fileDB(idxVideo).mm_per_pixel = 1;
+                    if ~isempty(handleCircle) && ishandle(handleCircle)
+                        delete(handleCircle);
+                        handleCircle = [];
+                    end
+                    if size(listOfPoints,2) >= 3
+                        [omega,radius] = getCenterFromManyPoints(listOfPoints);
+                        omega = fix(omega);
+                        radius = fix(radius);
+                        handleCircle = plot(omega(1) + radius*cos(2*pi*(0:200)/200), omega(2) + radius*sin(2*pi*(0:200)/200), '-r', 'linewidth', 2);
+                        fileDB(idxVideo).well = [omega(1), omega(2), radius];
+                        fileDB(idxVideo).mm_per_pixel = 5/fileDB(idxVideo).well(3);
+                    else
+
                     end
                 end
-                if ~isempty(get(listVideosNoWell, 'value')) && ~isempty(fileDB(idxVideo).well)
-                    % now it has a well defined, swap it in the lists, keep it listed
-                    idxOldList = find(listVideosNoWellIdx == idxVideo);
-                    listVideosNoWellIdx(idxOldList) = [];
-                    namesNoWell = get(listVideosNoWell, 'string');
-                    namesNoWell(idxOldList) = [];
-                    set(listVideosNoWell, 'string', namesNoWell);
-                    set(listVideosNoWell, 'value',[]);
-                    set(listVideosWell, 'string', [get(listVideosWell, 'string') ; fileDB(idxVideo).name ]);
-                    set(listVideosWell, 'value',length(get(listVideosWell, 'string')));
-                    listVideosWellIdx = [listVideosWellIdx ; idxVideo];
-                elseif ~isempty(get(listVideosWell, 'value')) && isempty(fileDB(idxVideo).well)
-                    % now it has a no well defined, swap it in the lists, keep it listed
-                    idxOldList = find(listVideosWellIdx == idxVideo);
-                    listVideosWellIdx(idxOldList) = [];
-                    namesWell = get(listVideosWell, 'string');
-                    namesWell(idxOldList) = [];
-                    set(listVideosWell, 'string', namesWell);
-                    set(listVideosWell, 'value',[]);
-                    set(listVideosNoWell, 'string', [get(listVideosNoWell, 'string') ; fileDB(idxVideo).name ]);
-                    set(listVideosNoWell, 'value',length(get(listVideosNoWell, 'string')));
-                    listVideosNoWellIdx = [listVideosNoWellIdx ; idxVideo];
-                end
-                set(txtListVideosToProc, 'string', ['Videos to process: (', num2str(length(get(listVideosToProc,'string'))),' listed)']);
-                set(txtListVideosWell, 'string', ['Swim well defined: (', num2str(length(get(listVideosWell,'string'))),' found)']);
-                set(txtListVideosNoWell, 'string', ['No swim well defined: (', num2str(length(get(listVideosNoWell,'string'))),' remaining)']);
             end
-        catch exception
-            generateReport(exception)
+            if ~isempty(get(listVideosNoWell, 'value')) && ~isempty(fileDB(idxVideo).well)
+                % now it has a well defined, swap it in the lists, keep it listed
+                idxOldList = find(listVideosNoWellIdx == idxVideo);
+                listVideosNoWellIdx(idxOldList) = [];
+                namesNoWell = get(listVideosNoWell, 'string');
+                namesNoWell(idxOldList) = [];
+                set(listVideosNoWell, 'string', namesNoWell);
+                set(listVideosNoWell, 'value',[]);
+                set(listVideosWell, 'string', [get(listVideosWell, 'string') ; fileDB(idxVideo).name ]);
+                set(listVideosWell, 'value',length(get(listVideosWell, 'string')));
+                listVideosWellIdx = [listVideosWellIdx ; idxVideo];
+            elseif ~isempty(get(listVideosWell, 'value')) && isempty(fileDB(idxVideo).well)
+                % now it has a no well defined, swap it in the lists, keep it listed
+                idxOldList = find(listVideosWellIdx == idxVideo);
+                listVideosWellIdx(idxOldList) = [];
+                namesWell = get(listVideosWell, 'string');
+                namesWell(idxOldList) = [];
+                set(listVideosWell, 'string', namesWell);
+                set(listVideosWell, 'value',[]);
+                set(listVideosNoWell, 'string', [get(listVideosNoWell, 'string') ; fileDB(idxVideo).name ]);
+                set(listVideosNoWell, 'value',length(get(listVideosNoWell, 'string')));
+                listVideosNoWellIdx = [listVideosNoWellIdx ; idxVideo];
+            end
+            set(txtListVideosToProc, 'string', ['Videos to process: (', num2str(length(get(listVideosToProc,'string'))),' listed)']);
+            set(txtListVideosWell, 'string', ['Swim well defined: (', num2str(length(get(listVideosWell,'string'))),' found)']);
+            set(txtListVideosNoWell, 'string', ['No swim well defined: (', num2str(length(get(listVideosNoWell,'string'))),' remaining)']);
         end
     end
 
-% -------------------
-% Compute the center of the circumscribed circle from three points
-% -------------------
+    % -------------------
+    % Compute the center of the circumscribed circle from three points
+    % -------------------
     function omega = getCenterFrom3Points(p1, p2, p3)
         delta = ( p2(1)-p3(1) ) * ( p2(2)-p1(2) ) - ( p2(2)-p3(2) ) * ( p2(1)-p1(1) );
         len = ( p2(1)^2 + p2(2)^2 ) - ( p3(1)^2 + p3(2)^2 ) - ( p1(1)+p2(1) )*( p2(1)-p3(1) ) - ( p1(2)+p2(2) )*( p2(2)-p3(2) );
@@ -568,9 +516,9 @@ waitfor(mainFigure,'BeingDeleted','on');
         omega = omega / 2;
     end
 
-% -------------------
-% Compute the center and radius of the averaged circumscribed circle from more than three points
-% -------------------
+    % -------------------
+    % Compute the center and radius of the averaged circumscribed circle from more than three points
+    % -------------------
     function [omega,radius] = getCenterFromManyPoints(p)
         nbPoints = size(p,2);
         omegaAll = zeros(2,nchoosek(nbPoints,3));
@@ -593,109 +541,101 @@ waitfor(mainFigure,'BeingDeleted','on');
     end
 
     function addVideos(hObject, eventdata)
-        try
-            listOfFiltered = get(listVideosFiltered,'string');
-            listOfSelection = get(listVideosFiltered,'value');
-            previousSel = get(listVideosToProc,'string');
-            for video = 1:length(listOfSelection)
-                % check if it was selected before
-                flagOkToAdd = true;
-                for idxPrev = 1:length(previousSel)
-                    if strcmp(listOfFiltered{listOfSelection(video)}, previousSel{idxPrev})
-                        flagOkToAdd = false;
-                        break;
-                    end
+        listOfFiltered = get(listVideosFiltered,'string');
+        listOfSelection = get(listVideosFiltered,'value');
+        previousSel = get(listVideosToProc,'string');
+        for video = 1:length(listOfSelection)
+            % check if it was selected before
+            flagOkToAdd = true;
+            for idxPrev = 1:length(previousSel)
+                if strcmp(listOfFiltered{listOfSelection(video)}, previousSel{idxPrev})
+                    flagOkToAdd = false;
+                    break;
                 end
-                if flagOkToAdd
-                    % Add to the list of videos to process
-                    tmp = get(listVideosToProc, 'string');
+            end
+            if flagOkToAdd
+                % Add to the list of videos to process
+                tmp = get(listVideosToProc, 'string');
+                if isempty(tmp) || isempty(tmp{1})
+                    set(listVideosToProc, 'string',listOfFiltered(listOfSelection(video)));
+                    listVideosToProcIdx = listVideosFilteredIdx(listOfSelection(video));
+                else
+                    set(listVideosToProc, 'string',[get(listVideosToProc, 'string'); listOfFiltered{listOfSelection(video)}]);
+                    listVideosToProcIdx = [listVideosToProcIdx; listVideosFilteredIdx(listOfSelection(video))]; %#ok<AGROW>
+                end
+                % Check the definition of well, add to corresponding list
+                if length(fileDB(listVideosFilteredIdx(listOfSelection(video))).well) >= 3 && fileDB(listVideosFilteredIdx(listOfSelection(video))).well(3) > 0
+                    % add to the list with well
+                    tmp = get(listVideosWell, 'string');
                     if isempty(tmp) || isempty(tmp{1})
-                        set(listVideosToProc, 'string',listOfFiltered(listOfSelection(video)));
-                        listVideosToProcIdx = listVideosFilteredIdx(listOfSelection(video));
+                        set(listVideosWell, 'string',listOfFiltered(listOfSelection(video)));
+                        listVideosWellIdx = listVideosFilteredIdx(listOfSelection(video));
                     else
-                        set(listVideosToProc, 'string',[get(listVideosToProc, 'string'); listOfFiltered{listOfSelection(video)}]);
-                        listVideosToProcIdx = [listVideosToProcIdx; listVideosFilteredIdx(listOfSelection(video))]; %#ok<AGROW>
+                        set(listVideosWell, 'string',[get(listVideosWell, 'string'); listOfFiltered{listOfSelection(video)}]);
+                        listVideosWellIdx = [listVideosWellIdx; listVideosFilteredIdx(listOfSelection(video))]; %#ok<AGROW>
                     end
-                    % Check the definition of well, add to corresponding list
-                    if length(fileDB(listVideosFilteredIdx(listOfSelection(video))).well) >= 3 && fileDB(listVideosFilteredIdx(listOfSelection(video))).well(3) > 0
-                        % add to the list with well
-                        tmp = get(listVideosWell, 'string');
-                        if isempty(tmp) || isempty(tmp{1})
-                            set(listVideosWell, 'string',listOfFiltered(listOfSelection(video)));
-                            listVideosWellIdx = listVideosFilteredIdx(listOfSelection(video));
-                        else
-                            set(listVideosWell, 'string',[get(listVideosWell, 'string'); listOfFiltered{listOfSelection(video)}]);
-                            listVideosWellIdx = [listVideosWellIdx; listVideosFilteredIdx(listOfSelection(video))]; %#ok<AGROW>
-                        end
+                else
+                    % add to the list with no well
+                    tmp = get(listVideosNoWell, 'string');
+                    if isempty(tmp) || isempty(tmp{1})
+                        set(listVideosNoWell, 'string',listOfFiltered(listOfSelection(video)));
+                        listVideosNoWellIdx = listVideosFilteredIdx(listOfSelection(video));
                     else
-                        % add to the list with no well
-                        tmp = get(listVideosNoWell, 'string');
-                        if isempty(tmp) || isempty(tmp{1})
-                            set(listVideosNoWell, 'string',listOfFiltered(listOfSelection(video)));
-                            listVideosNoWellIdx = listVideosFilteredIdx(listOfSelection(video));
-                        else
-                            set(listVideosNoWell, 'string',[get(listVideosNoWell, 'string'); listOfFiltered{listOfSelection(video)}]);
-                            listVideosNoWellIdx = [listVideosNoWellIdx; listVideosFilteredIdx(listOfSelection(video))]; %#ok<AGROW>
-                        end
+                        set(listVideosNoWell, 'string',[get(listVideosNoWell, 'string'); listOfFiltered{listOfSelection(video)}]);
+                        listVideosNoWellIdx = [listVideosNoWellIdx; listVideosFilteredIdx(listOfSelection(video))]; %#ok<AGROW>
                     end
                 end
             end
-            if ~isempty(get(listVideosWell, 'value'))
-                selectWell
-            elseif ~isempty(get(listVideosNoWell, 'value'))
-                selectNoWell
-            end
-            set(txtListVideosToProc, 'string', ['Videos to process: (', num2str(length(get(listVideosToProc,'string'))),' listed)']);
-            set(txtListVideosWell, 'string', ['Swim well defined: (', num2str(length(get(listVideosWell,'string'))),' found)']);
-            set(txtListVideosNoWell, 'string', ['No swim well defined: (', num2str(length(get(listVideosNoWell,'string'))),' remaining)']);
-        catch exception
-            generateReport(exception)
         end
+        if ~isempty(get(listVideosWell, 'value'))
+            selectWell
+        elseif ~isempty(get(listVideosNoWell, 'value'))
+            selectNoWell
+        end
+        set(txtListVideosToProc, 'string', ['Videos to process: (', num2str(length(get(listVideosToProc,'string'))),' listed)']);
+        set(txtListVideosWell, 'string', ['Swim well defined: (', num2str(length(get(listVideosWell,'string'))),' found)']);
+        set(txtListVideosNoWell, 'string', ['No swim well defined: (', num2str(length(get(listVideosNoWell,'string'))),' remaining)']);
     end
 
     function removeVideos(hObject, eventdata)
-        try
-            listOfSelection = get(listVideosToProc,'value');
-            listStrings = get(listVideosToProc, 'string');
-            namesNoWell = get(listVideosNoWell, 'string');
-            namesWell = get(listVideosWell, 'string');
-            if ~isempty(listStrings) && ~isempty(listStrings{1}) && ~isempty(listOfSelection) && listOfSelection(1) ~= 0
-                tmp = get(listVideosToProc, 'string');
-                for video = length(listOfSelection):-1:1
-                    % Check the definition of well, remove from corresponding list
-                    if fileDB(listVideosToProcIdx(listOfSelection(video))).well
-                        idx = find(listVideosWellIdx == listVideosToProcIdx(listOfSelection(video)));
-                        namesWell(idx) = [];
-                        listVideosWellIdx(idx) = [];
-                    else
-                        idx = find(listVideosNoWellIdx == listVideosToProcIdx(listOfSelection(video)));
-                        namesNoWell(idx) = [];
-                        listVideosNoWellIdx(idx) = [];
-                    end
-                    tmp(listOfSelection(video)) = [];
-                    listVideosToProcIdx(listOfSelection(video)) = [];
+        listOfSelection = get(listVideosToProc,'value');
+        listStrings = get(listVideosToProc, 'string');
+        namesNoWell = get(listVideosNoWell, 'string');
+        namesWell = get(listVideosWell, 'string');
+        if ~isempty(listStrings) && ~isempty(listStrings{1}) && ~isempty(listOfSelection) && listOfSelection(1) ~= 0
+            tmp = get(listVideosToProc, 'string');
+            for video = length(listOfSelection):-1:1
+                % Check the definition of well, remove from corresponding list
+                if fileDB(listVideosToProcIdx(listOfSelection(video))).well
+                    idx = find(listVideosWellIdx == listVideosToProcIdx(listOfSelection(video)));
+                    namesWell(idx) = [];
+                    listVideosWellIdx(idx) = [];
+                else
+                    idx = find(listVideosNoWellIdx == listVideosToProcIdx(listOfSelection(video)));
+                    namesNoWell(idx) = [];
+                    listVideosNoWellIdx(idx) = [];
                 end
-                set(listVideosNoWell, 'string',namesNoWell)
-                set(listVideosWell, 'string',namesWell);
-                set(listVideosToProc, 'string', tmp);
-                set(listVideosToProc, 'value', 1);
+                tmp(listOfSelection(video)) = [];
+                listVideosToProcIdx(listOfSelection(video)) = [];
             end
-            if ~isempty(get(listVideosWell, 'value'))
-                selectWell;
-            elseif ~isempty(get(listVideosNoWell, 'value'))
-                selectNoWell;
-            end
-            set(txtListVideosToProc, 'string', ['Videos to process: (', num2str(length(get(listVideosToProc,'string'))),' listed)']);
-            set(txtListVideosWell, 'string', ['Swim well defined: (', num2str(length(get(listVideosWell,'string'))),' found)']);
-            set(txtListVideosNoWell, 'string', ['No swim well defined: (', num2str(length(get(listVideosNoWell,'string'))),' remaining)']);
-        catch exception
-            generateReport(exception)
+            set(listVideosNoWell, 'string',namesNoWell)
+            set(listVideosWell, 'string',namesWell);
+            set(listVideosToProc, 'string', tmp);
+            set(listVideosToProc, 'value', 1);
         end
+        if ~isempty(get(listVideosWell, 'value'))
+            selectWell;
+        elseif ~isempty(get(listVideosNoWell, 'value'))
+            selectNoWell;
+        end
+        set(txtListVideosToProc, 'string', ['Videos to process: (', num2str(length(get(listVideosToProc,'string'))),' listed)']);
+        set(txtListVideosWell, 'string', ['Swim well defined: (', num2str(length(get(listVideosWell,'string'))),' found)']);
+        set(txtListVideosNoWell, 'string', ['No swim well defined: (', num2str(length(get(listVideosNoWell,'string'))),' remaining)']);
     end
 
-% ============
-% GET ALL THE DISTINCT VALUES TO DISPLAY IN EVERY FILTER LIST
-% ============
+    % ============
+    % GET ALL THE DISTINCT VALUES TO DISPLAY IN EVERY FILTER LIST
+    % ============
     function populateFilters
         listToShow = 1:length(fileDB);
         fields = fieldnames(flt);
@@ -731,65 +671,61 @@ waitfor(mainFigure,'BeingDeleted','on');
         setFilteredList
     end
 
-% ============
-% BUILD THE LIST OF VIDEOS TO SHOW, BASED ON THE SELECTED FILTERS
-% ============
+    % ============
+    % BUILD THE LIST OF VIDEOS TO SHOW, BASED ON THE SELECTED FILTERS
+    % ============
     function setFilteredList(hObject,eventdata) %#ok<*INUSD>
-        try
-            result = cell(length(fileDB),1);
-            currentVal = 0;
-            listVideosFilteredIdx = zeros(1,length(fileDB));
-            fields = fieldnames(flt);
-            for field = 1:length(fields)
-                filterSelection.(fields{field}) = get(flt.(fields{field}),'value');
-            end
-            for vv = 1:length(fileDB)
-                flagKeep = true;
-                for field = 1:length(fields)
-                    if (field == colFtlWell)
-                        value = num2str(~isempty(fileDB(vv).(fields{field})));
-                    elseif ~ischar(fileDB(vv).(fields{field}))
-                        value = num2str(fileDB(vv).(fields{field}));
-                    else
-                        value = fileDB(vv).(fields{field});
-                    end
-                    options = get(flt.(fields{field}),'string');
-                    selIdx = get(flt.(fields{field}),'value');
-                    if length(selIdx) >= 1 && selIdx(1) == 1
-                        continue;
-                    end
-                    
-                    selection = options(selIdx);
-                    cand = 1;
-                    while (cand <= length(selection)) && ~strcmpi(value, selection{cand})
-                        cand = cand + 1;
-                    end
-                    if cand > length(selection)
-                        flagKeep = false;
-                        break
-                    end
-                end
-                if flagKeep
-                    currentVal = currentVal + 1;
-                    result{currentVal} = fileDB(vv).name;
-                    listVideosFilteredIdx(currentVal) = vv;
-                end
-            end
-            listVideosFilteredIdx = listVideosFilteredIdx(1:currentVal);
-            set(listVideosFiltered, 'string', result(1:currentVal,:), 'value',1);
-            set(txtListVideosFiltered,'string', ['Videos to choose from: (',num2str(length(listVideosFilteredIdx)),' filtered)']);
-        catch exception
-            generateReport(exception)
+        result = cell(length(fileDB),1);
+        currentVal = 0;
+        listVideosFilteredIdx = zeros(1,length(fileDB));
+        fields = fieldnames(flt);
+        for field = 1:length(fields)
+            filterSelection.(fields{field}) = get(flt.(fields{field}),'value');
         end
+        for vv = 1:length(fileDB)
+            flagKeep = true;
+            for field = 1:length(fields)
+                if (field == colFtlWell)
+                    value = num2str(~isempty(fileDB(vv).(fields{field})));
+                elseif ~ischar(fileDB(vv).(fields{field}))
+                    value = num2str(fileDB(vv).(fields{field}));
+                else
+                    value = fileDB(vv).(fields{field});
+                end
+                options = get(flt.(fields{field}),'string');
+                selIdx = get(flt.(fields{field}),'value');
+                if length(selIdx) >= 1 && selIdx(1) == 1
+                    continue;
+                end
+
+                selection = options(selIdx);
+                cand = 1;
+                while (cand <= length(selection)) && ~strcmpi(value, selection{cand})
+                    cand = cand + 1;
+                end
+                if cand > length(selection)
+                    flagKeep = false;
+                    break
+                end
+            end
+            if flagKeep
+                currentVal = currentVal + 1;
+                result{currentVal} = fileDB(vv).name;
+                listVideosFilteredIdx(currentVal) = vv;
+            end
+        end
+        listVideosFilteredIdx = listVideosFilteredIdx(1:currentVal);
+        set(listVideosFiltered, 'string', result(1:currentVal,:), 'value',1);
+        set(txtListVideosFiltered,'string', ['Videos to choose from: (',num2str(length(listVideosFilteredIdx)),' filtered)']);
     end
 
-% ============
-% DISPLAY THE AXIS AND THE SLIDER
-% ============
+    % ============
+    % DISPLAY THE AXIS AND THE SLIDER
+    % ============
 
-% ------------
-% Set the position of the main panel based on the sliders values
-% ------------
+    % ------------
+    % Set the position of the main panel based on the sliders values
+    % ------------
     function setMainPanelPositionBySliders(hObject,eventdata)
         newPos = get(mainPanel,'position');
         newPos(1) = 5 - get(sliderHoriz,'value');
@@ -797,9 +733,9 @@ waitfor(mainFigure,'BeingDeleted','on');
         set(mainPanel,'position',newPos);
     end
 
-% ------------
-% Update the sliders positions when the main figure is resized
-% ------------
+    % ------------
+    % Update the sliders positions when the main figure is resized
+    % ------------
     function resizeMainFigure(hObject,eventdata)
         % -------
         % Update the size and position of the sliders

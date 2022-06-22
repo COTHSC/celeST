@@ -1,5 +1,4 @@
 function CSTShowMeasures
-
 % Copyright (c) 2013 Rutgers
 % Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 % The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -7,7 +6,7 @@ function CSTShowMeasures
 
 % This function creates a window displaying measures.
 
-global fileDB filterNames filterSelection samplesDef colFtlWell mainPnlW mainPnlH samplesIdx;
+global fileDB filterSelection samplesDef colFtlWell mainPnlW mainPnlH samplesIdx;
 
 samplesIdx = [];
 samplesDef = [];
@@ -22,7 +21,7 @@ mainW = min(mainPnlW, scrsz(3) - 10);
 mainH = min(mainPnlH, scrsz(4) - 70);
 mainPanelPosition = [2, mainH-mainPnlH-2, mainPnlW, mainPnlH];
 mainFigure = figure('Visible','off','Position',[5,40,mainW,mainH],'Name','CeleST: Statistics sample definition - Define the samples by grouping videos, launch the graph display','numbertitle','off', 'menubar', 'none', 'resizefcn', @resizeMainFigure);
-mainPanel = uipanel('parent', mainFigure,'BorderType','none','units','pixels', 'position', mainPanelPosition);
+mainPanel = uipanel('parent', mainFigure,'BorderType', 'none','units','pixels', 'position', mainPanelPosition);
 sliderHoriz = uicontrol('parent',mainFigure,'style','slider','position',[0 0 mainW-20 20],'max', 1,'min',0, 'value',0,'callback',@setMainPanelPositionBySliders);
 sliderVert = uicontrol('parent',mainFigure,'style','slider','position',[mainW-20 20 20 mainH-20],'max', max(1,-mainPanelPosition(2)),'min',0, 'value',max(1,-mainPanelPosition(2)),'callback',@setMainPanelPositionBySliders);
 set(mainFigure, 'color', get(mainPanel,'backgroundcolor'));
@@ -35,11 +34,26 @@ filterH = 100;
 filterW = 150;
 hFilters = filterH + 20;
 yFilters = mainPnlH - hFilters - 5;
-pnlFilters = uipanel('parent', mainPanel,'BorderType','none','units','pixels', 'position', [1 yFilters mainPnlW hFilters]);%,'title','Filters'
-for idxtmp = 0:length(filterNames)-1
-    uicontrol('parent',pnlFilters,'style','text','string',filterNames{idxtmp+1},'position',[idxtmp*filterW filterH filterW 20])
-    flt.(filterNames{idxtmp+1}) = uicontrol('parent',pnlFilters,'style','listbox','String',{''},'max',2,'min',0,'position',[idxtmp*filterW 0 filterW filterH],'callback',@setFilteredList);
+pnlFilters = uipanel('parent', mainPanel,'BorderType', 'none','units','pixels', 'position', [1 yFilters mainPnlW hFilters]);%,'title','Filters'
+listFilters = fieldnames(fileDB);
+idxtmp = 1;
+while idxtmp <= length(listFilters)
+    if strcmp(listFilters{idxtmp},'name') || strcmp(listFilters{idxtmp},'directory') || strcmp(listFilters{idxtmp},'format')...
+            || strcmp(listFilters{idxtmp},'frames_per_second') || strcmp(listFilters{idxtmp},'mm_per_pixel') || strcmp(listFilters{idxtmp},'set')...
+            || strcmp(listFilters{idxtmp},'duration') || strcmp(listFilters{idxtmp},'images') || strcmp(listFilters{idxtmp},'glareZones')...
+            || strcmp(listFilters{idxtmp},'note') || strcmp(listFilters{idxtmp},'worms') || strcmp(listFilters{idxtmp},'well')...
+            || strcmp(listFilters{idxtmp},'month') || strcmp(listFilters{idxtmp},'day') || strcmp(listFilters{idxtmp},'year')
+        listFilters(idxtmp) = [];
+    else
+        idxtmp = idxtmp + 1;
+    end
 end
+        
+for idxtmp = 0:length(listFilters)-1
+    uicontrol('parent',pnlFilters,'style','text','string',listFilters{idxtmp+1},'position',[idxtmp*filterW filterH filterW 20])
+    flt.(listFilters{idxtmp+1}) = uicontrol('parent',pnlFilters,'style','listbox','String',{''},'max',2,'min',0,'position',[idxtmp*filterW 0 filterW filterH],'callback',@setFilteredList);
+end
+
 
 % ----------
 % List of videos filtered
@@ -57,11 +71,11 @@ uicontrol('parent',mainPanel,'style','pushbutton', 'string', '>>      Add to a n
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', '>>  Add to the selected sample  >>', 'position', [2*filterW yVideos+3*filterH-90 200 50], 'callback', @addVideosExisting);
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', '<<  Remove the selected videos  <<', 'position', [2*filterW yVideos+3*filterH-170 200 50], 'callback', @removeVideos);
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', '<<  Remove the selected sample  <<', 'position', [2*filterW yVideos+3*filterH-220 200 50], 'callback', @removeSample);
-showGraphsBtn = uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Show graphs for these samples', 'position', [2*filterW yVideos+3*filterH-300 200 50], 'enable', 'off', 'callback', @showGraphs);
+uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Show graphs for these samples',        'position', [2*filterW yVideos+3*filterH-300 200 50], 'callback', @showGraphs);
 
 uicontrol('parent',mainPanel,'style','text', 'HorizontalAlignment', 'left','String','Double-click on a sample name (first line) to change it.','position',[4*filterW+80 yVideos+3*filterH+35 500 20]);
 tableSamples = uitable('parent',mainPanel,'position',[4*filterW-100 50 mainPnlW-4*filterW yVideos+3*filterH-10],'RearrangeableColumn','on','ColumnEditable',[],'CellEditCallback', @tableEdit, 'CellSelectionCallback', @tableSelect,'rowstriping','off');
-selectedCellsData = struct;
+selectedCellsData = [];
 
 if isempty(samplesDef)
     samplesDef = {};
@@ -98,105 +112,76 @@ waitfor(mainFigure,'BeingDeleted','on');
     end
 
     function showGraphs(hObject,eventdata)
-        try
-            CSTShowGraphs;
-        catch exception
-            generateReport(exception)
-        end
+        CSTShowGraphs;
     end
 
     function addVideosNew(hObject,eventdata)
-        try
+        listOfFiltered = get(listVideosFiltered,'string');
+        listOfSelection = get(listVideosFiltered,'value');
+        samplesDef = get(tableSamples, 'data');
+        newCol = 1 + size(samplesDef,2);
+        samplesIdx{newCol} = num2cell(listVideosFilteredIdx(listOfSelection));
+        totWorms = 0;
+        for sel = 1:length(samplesIdx{newCol})
+            totWorms = totWorms + fileDB(samplesIdx{newCol}{sel}).worms;
+        end
+        selectedNames = [['Sample ',num2str(newCol)];[num2str(totWorms),' worms'];listOfFiltered(listOfSelection)];
+        samplesDef(1:length(selectedNames),newCol) = selectedNames;
+        set(tableSamples, 'data', samplesDef);
+        setRowNames
+    end
+
+    function addVideosExisting(hObject,eventdata)
+        if isfield(selectedCellsData,'Indices') && ~isempty(selectedCellsData.Indices)
+            colToAdd = selectedCellsData.Indices(1,2);
             listOfFiltered = get(listVideosFiltered,'string');
             listOfSelection = get(listVideosFiltered,'value');
             samplesDef = get(tableSamples, 'data');
-            newCol = 1 + size(samplesDef,2);
-            samplesIdx{newCol} = num2cell(listVideosFilteredIdx(listOfSelection));
-            totWorms = 0;
-            for sel = 1:length(samplesIdx{newCol})
-                totWorms = totWorms + fileDB(samplesIdx{newCol}{sel}).worms;
+            namesToAdd = listOfFiltered(listOfSelection);
+            idxToAdd = 1;
+            while (idxToAdd <= size(samplesDef,1)) && ~isempty(samplesDef{idxToAdd,colToAdd})
+                idxToAdd = idxToAdd + 1;
             end
-            selectedNames = [['Sample ',num2str(newCol)];[num2str(totWorms),' worms'];listOfFiltered(listOfSelection)];
-            samplesDef(1:length(selectedNames),newCol) = selectedNames;
-            set(tableSamples, 'data', samplesDef);
-            setRowNames
-            set(showGraphsBtn,'Enable','on');
-        catch exception
-            generateReport(exception)
-        end
-    end
-
-% ------------
-% Workaround implemented using strcmp for below if statements because isField can no longer be used on
-% user defined classes
-% ------------
-
-    function addVideosExisting(hObject,eventdata)
-        try
-            if (any(strcmp(fieldnames(selectedCellsData), 'Indices')) && ~isempty(selectedCellsData.Indices))
-                colToAdd = selectedCellsData.Indices(1,2);
-                listOfFiltered = get(listVideosFiltered,'string');
-                listOfSelection = get(listVideosFiltered,'value');
-                samplesDef = get(tableSamples, 'data');
-                namesToAdd = listOfFiltered(listOfSelection);
-                idxToAdd = 1;
-                while (idxToAdd <= size(samplesDef,1)) && ~isempty(samplesDef{idxToAdd,colToAdd})
+            for name = 1:length(namesToAdd)
+                if ~any(strcmp(namesToAdd{name}, samplesDef(:,colToAdd)))
+                    samplesDef{idxToAdd, colToAdd} = namesToAdd{name};
+                    samplesIdx{colToAdd}{idxToAdd-2} = listVideosFilteredIdx(listOfSelection(name));
                     idxToAdd = idxToAdd + 1;
                 end
-                for name = 1:length(namesToAdd)
-                    if ~any(strcmp(namesToAdd{name}, samplesDef(:,colToAdd)))
-                        samplesDef{idxToAdd, colToAdd} = namesToAdd{name};
-                        samplesIdx{colToAdd}{idxToAdd-2} = listVideosFilteredIdx(listOfSelection(name));
-                        idxToAdd = idxToAdd + 1;
-                    end
-                end
-                set(tableSamples, 'data', samplesDef);
-                setRowNames
             end
-        catch exception
-            generateReport(exception)
+            set(tableSamples, 'data', samplesDef);
+            setRowNames
         end
     end
 
     function removeVideos(hObject,eventdata)
-        try
-            if any(strcmp(fieldnames(selectedCellsData), 'Indices')) && ~isempty(selectedCellsData.Indices)
-                samplesDef = get(tableSamples, 'data');
-                for item = size(selectedCellsData.Indices,1):-1:1
-                    row = selectedCellsData.Indices(item,1);
-                    if row >= 3
-                        col = selectedCellsData.Indices(item,2);
-                        samplesDef(row:end-1, col) = samplesDef(row+1:end, col);
-                        samplesDef{end, col} = [];
-                        samplesIdx{col}(row-2) = [];
-                    end
+        if isfield(selectedCellsData,'Indices') && ~isempty(selectedCellsData.Indices)
+            samplesDef = get(tableSamples, 'data');
+            for item = size(selectedCellsData.Indices,1):-1:1
+                row = selectedCellsData.Indices(item,1);
+                if row >= 3
+                    col = selectedCellsData.Indices(item,2);
+                    samplesDef(row:end-1, col) = samplesDef(row+1:end, col);
+                    samplesDef{end, col} = [];
+                    samplesIdx{col}(row-2) = [];
                 end
-                set(tableSamples, 'data', samplesDef);
-                trimEmptyLines
             end
-        catch exception
-            generateReport(exception)
+            set(tableSamples, 'data', samplesDef);
+            trimEmptyLines
         end
     end
 
     function removeSample(hObject,eventdata)
-        try
-            if any(strcmp(fieldnames(selectedCellsData), 'Indices')) && ~isempty(selectedCellsData.Indices)
-                samplesDef = get(tableSamples, 'data');
-                colToDelete = selectedCellsData.Indices(1,2);
-                button = questdlg(['Are you sure you want to delete sample ', samplesDef{1,colToDelete}, '?'],'CeleST','Delete','Cancel','Cancel');
-                if strcmp(button, 'Delete')
-                    samplesDef(:, colToDelete) = [];
-                    set(tableSamples, 'data', samplesDef);
-                    samplesIdx(colToDelete) = [];
-                    trimEmptyLines
-                end
-                if isempty(samplesIdx)
-                    set(showGraphsBtn,'Enable','off');
-                end
+        if isfield(selectedCellsData,'Indices') && ~isempty(selectedCellsData.Indices)
+            samplesDef = get(tableSamples, 'data');
+            colToDelete = selectedCellsData.Indices(1,2);
+            button = questdlg(['Are you sure you want to delete sample ', samplesDef{1,colToDelete}, '?'],'CeleST','Delete','Cancel','Cancel');
+            if strcmp(button, 'Delete')
+                samplesDef(:, colToDelete) = [];
+                set(tableSamples, 'data', samplesDef);
+                samplesIdx(colToDelete) = [];
+                trimEmptyLines
             end
-        catch exception
-            generateReport(exception)
         end
     end
 
@@ -244,35 +229,27 @@ waitfor(mainFigure,'BeingDeleted','on');
     end
 
     function tableSelect(hObject,eventdata) %#ok<*INUSL>
-        try
-            selectedCellsData = eventdata;
-            if size(eventdata.Indices, 1) == 1 && eventdata.Indices(1) == 1
-                set(tableSamples, 'ColumnEditable', true)
-            else
-                set(tableSamples, 'ColumnEditable', false)
-            end
-        catch exception
-            generateReport(exception)
+        selectedCellsData = eventdata;
+        if size(eventdata.Indices, 1) == 1 && eventdata.Indices(1) == 1
+            set(tableSamples, 'ColumnEditable', true)
+        else
+            set(tableSamples, 'ColumnEditable', false)
         end
     end
 
     function tableEdit(hObject,eventdata)
-        try
-            if size(eventdata.Indices, 1) ~= 1 || eventdata.Indices(1) ~= 1
-                samplesDef = get(tableSamples, 'data');
-                samplesDef(eventdata.Indices(1), eventdata.Indices(2)) = eventdata.PreviousData;
-                set(tableSamples, 'data', samplesDef);
-            end
-            set(tableSamples, 'ColumnEditable', false)
-        catch exception
-            generateReport(exception)
+        if size(eventdata.Indices, 1) ~= 1 || eventdata.Indices(1) ~= 1
+            samplesDef = get(tableSamples, 'data');
+            samplesDef(eventdata.Indices(1), eventdata.Indices(2)) = eventdata.PreviousData;
+            set(tableSamples, 'data', samplesDef);
         end
+        set(tableSamples, 'ColumnEditable', false)
     end
 
 
-% ============
-% GET ALL THE DISTINCT VALUES TO DISPLAY IN EVERY FILTER LIST
-% ============
+    % ============
+    % GET ALL THE DISTINCT VALUES TO DISPLAY IN EVERY FILTER LIST
+    % ============
     function populateFilters
         listToShow = 1:length(fileDB);
         fields = fieldnames(flt);
@@ -302,79 +279,75 @@ waitfor(mainFigure,'BeingDeleted','on');
         for field = 1:length(fields)
             set(flt.(fields{field}),'value', filterSelection.(fields{field}));
         end
-        
+
         setFilteredList
     end
 
-% ============
-% BUILD THE LIST OF VIDEOS TO SHOW, BASED ON THE SELECTED FILTERS
-% ============
+    % ============
+    % BUILD THE LIST OF VIDEOS TO SHOW, BASED ON THE SELECTED FILTERS
+    % ============
     function setFilteredList(hObject,eventdata) %#ok<*INUSD>
-        try
-            result = cell(length(fileDB),1);
-            currentVal = 0;
-            listVideosFilteredIdx = zeros(1,length(fileDB));
-            fields = fieldnames(flt);
-            for field = 1:length(fields)
-                filterSelection.(fields{field}) = get(flt.(fields{field}),'value');
-            end
-            for vv = 1:length(fileDB)
-                flagKeep = true;
-                for field = 1:length(fields)
-                    if (field == colFtlWell)
-                        value = num2str(~isempty(fileDB(vv).(fields{field})));
-                    elseif ~ischar(fileDB(vv).(fields{field}))
-                        value = num2str(fileDB(vv).(fields{field}));
-                    else
-                        value = fileDB(vv).(fields{field});
-                    end
-                    options = get(flt.(fields{field}),'string');
-                    selIdx = get(flt.(fields{field}),'value');
-                    if length(selIdx) >= 1 && selIdx(1) == 1
-                        continue;
-                    end
-                    selection = options(selIdx);
-                    cand = 1;
-                    while (cand <= length(selection)) && ~strcmpi(value, selection{cand})
-                        cand = cand + 1;
-                    end
-                    if cand > length(selection)
-                        flagKeep = false;
-                        break
-                    end
-                end
-                if flagKeep && fileDB(vv).measured
-                    currentVal = currentVal + 1;
-                    result{currentVal} = [fileDB(vv).name, '   (', num2str(fileDB(vv).worms), ' worms)'];
-                    listVideosFilteredIdx(currentVal) = vv;
-                end
-            end
-            listVideosFilteredIdx = listVideosFilteredIdx(1:currentVal);
-            set(listVideosFiltered, 'string', result(1:currentVal,:), 'value',1);
-            set(txtListVideosFiltered,'string', ['Videos to choose from: (',num2str(length(listVideosFilteredIdx)),' filtered)']);
-        catch exception
-            generateReport(exception)
+        result = cell(length(fileDB),1);
+        currentVal = 0;
+        listVideosFilteredIdx = zeros(1,length(fileDB));
+        fields = fieldnames(flt);
+        for field = 1:length(fields)
+            filterSelection.(fields{field}) = get(flt.(fields{field}),'value');
         end
+        for vv = 1:length(fileDB)
+            flagKeep = true;
+            for field = 1:length(fields)
+                if (field == colFtlWell)
+                    value = num2str(~isempty(fileDB(vv).(fields{field})));
+                elseif ~ischar(fileDB(vv).(fields{field}))
+                    value = num2str(fileDB(vv).(fields{field}));
+                else
+                    value = fileDB(vv).(fields{field});
+                end
+                options = get(flt.(fields{field}),'string');
+                selIdx = get(flt.(fields{field}),'value');
+                if length(selIdx) >= 1 && selIdx(1) == 1
+                    continue;
+                end
+                selection = options(selIdx);
+                cand = 1;
+                while (cand <= length(selection)) && ~strcmpi(value, selection{cand})
+                    cand = cand + 1;
+                end
+                if cand > length(selection)
+                    flagKeep = false;
+                    break
+                end
+            end
+            if flagKeep && fileDB(vv).measured
+                currentVal = currentVal + 1;
+                result{currentVal} = [fileDB(vv).name, '   (', num2str(fileDB(vv).worms), ' worms)'];
+                listVideosFilteredIdx(currentVal) = vv;
+            end
+        end
+        listVideosFilteredIdx = listVideosFilteredIdx(1:currentVal);
+        set(listVideosFiltered, 'string', result(1:currentVal,:), 'value',1);
+        set(txtListVideosFiltered,'string', ['Videos to choose from: (',num2str(length(listVideosFilteredIdx)),' filtered)']);
     end
 
-% ============
-% DISPLAY THE AXIS AND THE SLIDER
-% ============
+    % ============
+    % DISPLAY THE AXIS AND THE SLIDER
+    % ============
 
-% ------------
-% Set the position of the main panel based on the sliders values
-% ------------
-    function setMainPanelPositionBySliders(hObject,eventdata)
+    % ------------
+    % Set the position of the main panel based on the sliders values
+    % ------------
+    function setMainPanelPositionBySliders(hObject,eventdata) 
         newPos = get(mainPanel,'position');
         newPos(1) = 5 - get(sliderHoriz,'value');
         newPos(2) = -5 - get(sliderVert,'value');
         set(mainPanel,'position',newPos);
     end
 
-% ------------
-% Update the sliders positions when the main figure is resized
-% ------------
-    function resizeMainFigure(hObject,eventdata)
+    % ------------
+    % Update the sliders positions when the main figure is resized
+    % ------------
+    function resizeMainFigure(hObject,eventdata) 
         % -------
         % Update the size and position of the sliders
         % -------

@@ -1,5 +1,4 @@
 function [fileDBEntry,listOfWormsEntry] = CSTSegmentImage(fileDBEntry, currentImageFileName, currentFrameForProcessing, axesImage)
-
 % Copyright (c) 2013 Rutgers
 % Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 % The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -8,9 +7,8 @@ function [fileDBEntry,listOfWormsEntry] = CSTSegmentImage(fileDBEntry, currentIm
 % -------------------
 % Look for worms on single image
 % -------------------
-global currentImage zoneOkForCompleteWorms zoneOkForStartingWorms traceOn timingOn timings timingsTime plotAllOn flagRobustness fileToLog flagVIP;
+global currentImage zoneOkForCompleteWorms zoneOkForStartingWorms traceOn timingOn timings timingsTime plotAllOn flagRobustness fileToLog;
 
-plotAllOn = true;
 
 if timingOn; tic; end
 if traceOn; fprintf(fileToLog, ['processing frame ', num2str(currentFrameForProcessing), ' from ', fileDBEntry.name,' : ', currentImageFileName, '\n']); end
@@ -122,8 +120,7 @@ se = strel('square',7);
 % -----------
 % Distance in pixel between vertices in the candidate border surrounding the worms
 % -----------
-stepSize = 0.2; % Previous parameter from 'Lab' Version
-% stepSize = 0.1;
+stepSize = 0.2;
 % -----------
 % Neighborhood to mark as part of the candidate border, around vertices of that border, to check when the border get closed
 % -----------
@@ -143,8 +140,7 @@ worm = 0;
 % -----------
 % Minimum gradient intensity used to normalize gradient vectors into unit vector (to avoid division by zero or by very small number)
 % -----------
-% gradientMinimum = 0.01; % Previous parameter from 'Lab' Version
-gradientMinimum = 0.001;
+gradientMinimum = 0.01;
 
 % -----------
 % Maximum gradient intensity, half of it will be the minimum value to consider as a starting point for a candidate border
@@ -155,7 +151,7 @@ listOfWormsPotential.width = cell(1,0);
 listOfWormsPotential.localthreshold = cell(1,0);
 for wormCandidate = 1:50
     try
-        
+
         % ===========
         % BUILD A CANDIDATE BORDER
         % ===========
@@ -188,13 +184,13 @@ for wormCandidate = 1:50
             break
         end
         coordsInt = floor(0.5 + boundCandidate(:, end));
-        
+
         % -----------
         % Successive points: interpolate the gradient at each point
         % -----------
         iter = 1;
         interpGradCandidate = [];
-        while iter <= 10000 && ~(flagClosedWorm || flagReachedTheEdge || flagGradientTooSmall)
+        while iter <= 2000 && ~(flagClosedWorm || flagReachedTheEdge || flagGradientTooSmall)
             iter = iter + 1;
             % -----------
             % Interpolate the gradient at the location of the latest point
@@ -234,7 +230,7 @@ for wormCandidate = 1:50
             % -----------
             flagReachedTheEdge = ~(zoneOkForCompleteWorms(newPixel(2), newPixel(1))) ;
         end
-        
+
         % -----------
         % Special case: when the border has reached the edge of the inner circle where worms swim, still need to investigate the other direction as well
         % -----------
@@ -254,7 +250,7 @@ for wormCandidate = 1:50
             % -----------
             iter = 1;
             interpGradCandidate = [];
-            while iter <= 10000 && ~(flagClosedWorm || flagReachedTheEdge || flagGradientTooSmall)
+            while iter <= 2000 && ~(flagClosedWorm || flagReachedTheEdge || flagGradientTooSmall)
                 iter = iter + 1;
                 % -----------
                 % Interpolate the gradient at the location of the latest point: Opposite order
@@ -324,7 +320,7 @@ for wormCandidate = 1:50
                 flagClosedWorm = true;
             end
         end
-        
+
         % ===========
         % MARK THE ZONE SURROUNDING THE CANDIDATE BORDER AS 'EXPLORED'
         % ===========
@@ -344,7 +340,7 @@ for wormCandidate = 1:50
         potentialMax(imdilate(maskWorm,se) > 0) = false;
         if plotAllOn; plot(boundCandidate(1,[1:end,1]), boundCandidate(2,[1:end,1]),':m', 'parent', axesImage); end
         if timingOn; timings(3) = timings(3) + toc ; timingsTime(3) = timingsTime(3) + 1 ; tic; end
-        
+
         % =============
         % BUILD A WORM BORDER WITHIN THE CANDIDATE BORDER
         % =============
@@ -370,7 +366,7 @@ for wormCandidate = 1:50
         end
         bound = smoothedVertices / max(1, nbOfIter);
         if plotAllOn; plot(bound(1,[1:end,1]), bound(2,[1:end,1]),':r', 'parent', axesImage); end
-        
+
         % -------------
         % Tighten the vertices
         % -------------
@@ -412,23 +408,23 @@ for wormCandidate = 1:50
             % Re-sample the vertices to smooth the border and avoid vertex clustering
             % -------------
             curvCoord = cumsum(max(0.0001,hypot(bound(1,[2:end,1]) - bound(1,:), bound(2,[2:end,1]) - bound(2,:))));
-            bound = interp1q(curvCoord', bound', linspace(curvCoord(1),curvCoord(end),floor(length(curvCoord)/5))')';
-            bound = interp1q((1:length(bound))', bound', linspace(1,length(bound),length(curvCoord))')';
+            bound = interp1(curvCoord', bound', linspace(curvCoord(1),curvCoord(end),floor(length(curvCoord)/5))')';
+            bound = interp1((1:length(bound))', bound', linspace(1,length(bound),length(curvCoord))')';
         end
         if timingOn; timings(2) = timings(2) + toc ; timingsTime(2) = timingsTime(2) + 1 ; tic; end
         if plotAllOn; plot(bound(1,[1:end,1]), bound(2,[1:end,1]),':y', 'parent', axesImage); end
-        
+
         % -------------
         % Compute the appearance threshold
         % -------------
         thresholdAppearance = getThresholdIntensityAroundWorm(bound);
         if timingOn; timings(4) = timings(4) + toc ; timingsTime(4) = timingsTime(4) + 1 ; tic; end
-        
+
         % -------------
         % Find a point inside the worm, for future reference
         % -------------
         pointInside = getPointInsideWorm(bound, thresholdAppearance);
-        
+
         % ------------
         % Define a subimage containing the border, with extra margin that may contain unsegmented worm parts
         % ------------
@@ -444,7 +440,7 @@ for wormCandidate = 1:50
         % ------------
         [xyskel, width] = findWormCBLWithinSubRegion(bbox, thresholdAppearance, pointInside);
         if timingOn; timings(5) = timings(5) + toc ; timingsTime(5) = timingsTime(5) + 1 ; tic; end
-        
+
         if ~(isempty(xyskel) || any(isnan(xyskel(:))))
             intCoord = round(xyskel);
             intCoord(1,:) = max(1, min(size(currentImage,2), intCoord(1,:)));
@@ -462,7 +458,7 @@ for wormCandidate = 1:50
             if plotAllOn; plot(bound(1,[1:end,1]), bound(2,[1:end,1]),':c', 'parent', axesImage); end
             continue
         end
-        
+
         oldBound = bound;
         % ------------
         % Compute the new worm border from the CBL
@@ -501,6 +497,8 @@ for wormCandidate = 1:50
         if timingOn; timings(7) = timings(7) + toc ; timingsTime(7) = timingsTime(7) + 1 ; tic; end
         for numtmp = 1:numForgotten
             currentNum = numel(find(labelForgotten == numtmp));
+            fprintf(fileToLog, ['current num is: \n'], currentNum, '\n');
+
             % ------------
             % Only consider regions of sufficient size
             % ------------
@@ -532,7 +530,12 @@ for wormCandidate = 1:50
     catch em
         if flagRobustness
             fprintf(fileToLog, ['***   There was an error segmenting worm candidate: ',num2str(worm),' , skipping this worm. ***','\n']);
-            fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
+            %Sfprintf(fileToLog, ['Here I am', '\n']);
+            %fprintf (fileToLog, ["Unable to load file: %s\n", lasterr]);
+            fprintf(fileToLog, ['exception message: ', em.message, '\n']);
+            fprintf(fileToLog, ['exception identifier ', em.identifier, '\n']);
+
+          %fprintf(fileToLog, [getReport(em, 'basic'),'\n']);
         else
             rethrow(em)
         end
@@ -563,12 +566,6 @@ for currentWorm = 1:length(listOfWormsPotential.skel)
             listOfWormsFiltered.skel{end+1} = listOfWormsPotential.skel{currentWorm};
             listOfWormsFiltered.width{end+1} = listOfWormsPotential.width{currentWorm};
             listOfWormsFiltered.localthreshold{end+1} = listOfWormsPotential.localthreshold{currentWorm};
-        else
-            if flagVIP
-                % figure to let users choose if it's a worm or not
-                % including a yes or no button, the image in question, and
-                % a question
-            end
         end
     catch em
         if flagRobustness
@@ -783,7 +780,7 @@ if timingOn; timings(6) = timings(6) + toc ; timingsTime(6) = timingsTime(6) + 1
 % ------------
     function [xyskel, width] = findWormCBLWithinMask(maskWhereToLook, bbox, magnifFactor)
         maskInside = bwdist(~maskWhereToLook);
-        
+
         rangeAnglesMax = 48;
         rangeAngles = 1:rangeAnglesMax;
         % ------------
@@ -896,7 +893,7 @@ if timingOn; timings(6) = timings(6) + toc ; timingsTime(6) = timingsTime(6) + 1
         % ------------
         xyskel(1,:) = (xyskel(1,:) + bbox(3)) / magnifFactor;
         xyskel(2,:) = (xyskel(2,:) + bbox(1)) / magnifFactor;
-        
+
         width = width / magnifFactor;
     end
 
