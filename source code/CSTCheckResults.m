@@ -1194,7 +1194,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                     hMainTextWorms(otherWorm) = text(tmp(1), tmp(2), num2str(otherWorm),'parent',hAxeAllVideo,'color', 'r','FontSize',12, 'fontweight' ,'bold');
                 else
                     set(hMainAllWorms(otherWorm), 'xdata', listOfWorms.skel{otherWorm}{currentFrame}(1,:), 'ydata', listOfWorms.skel{otherWorm}{currentFrame}(2,:), 'color', colourOther,'linewidth',2);
-                    set(hMainTextWorms(otherWorm), 'position', tmp,'color', 'r','FontSize',12, 'fontweight' ,' bold');
+                    set(hMainTextWorms(otherWorm), 'position', tmp,'color', 'r','FontSize',12, 'fontweight' ,'bold');
                 end
             else
                 tmp = mean(listOfWorms.skel{otherWorm}{currentFrame},2);
