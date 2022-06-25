@@ -48,7 +48,7 @@ while idxtmp <= length(listFilters)
         idxtmp = idxtmp + 1;
     end
 end
-        
+
 for idxtmp = 0:length(listFilters)-1
     uicontrol('parent',pnlFilters,'style','text','string',listFilters{idxtmp+1},'position',[idxtmp*filterW filterH filterW 20])
     flt.(listFilters{idxtmp+1}) = uicontrol('parent',pnlFilters,'style','listbox','String',{''},'max',2,'min',0,'position',[idxtmp*filterW 0 filterW filterH],'callback',@setFilteredList);
@@ -74,7 +74,7 @@ uicontrol('parent',mainPanel,'style','pushbutton', 'string', '<<  Remove the sel
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Show graphs for these samples',        'position', [2*filterW yVideos+3*filterH-300 200 50], 'callback', @showGraphs);
 
 uicontrol('parent',mainPanel,'style','text', 'HorizontalAlignment', 'left','String','Double-click on a sample name (first line) to change it.','position',[4*filterW+80 yVideos+3*filterH+35 500 20]);
-tableSamples = uitable('parent',mainPanel,'position',[4*filterW-100 50 mainPnlW-4*filterW yVideos+3*filterH-10],'RearrangeableColumn','on','ColumnEditable',[],'CellEditCallback', @tableEdit, 'CellSelectionCallback', @tableSelect,'rowstriping','off');
+tableSamples = uitable('parent',mainPanel,'position',[4*filterW-100 50 mainPnlW-4*filterW yVideos+3*filterH-10],'rearrangeablecolumns','on','columneditable',[],'CellEditCallback', @tableEdit, 'CellSelectionCallback', @tableSelect,'rowstriping','off');
 selectedCellsData = [];
 
 if isempty(samplesDef)
@@ -231,9 +231,9 @@ waitfor(mainFigure,'BeingDeleted','on');
     function tableSelect(hObject,eventdata) %#ok<*INUSL>
         selectedCellsData = eventdata;
         if size(eventdata.Indices, 1) == 1 && eventdata.Indices(1) == 1
-            set(tableSamples, 'ColumnEditable', true)
+            set(tableSamples, 'columneditable', true)
         else
-            set(tableSamples, 'ColumnEditable', false)
+            set(tableSamples, 'columneditable', false)
         end
     end
 
@@ -243,7 +243,7 @@ waitfor(mainFigure,'BeingDeleted','on');
             samplesDef(eventdata.Indices(1), eventdata.Indices(2)) = eventdata.PreviousData;
             set(tableSamples, 'data', samplesDef);
         end
-        set(tableSamples, 'ColumnEditable', false)
+        set(tableSamples, 'columneditable', false)
     end
 
 
@@ -337,7 +337,7 @@ waitfor(mainFigure,'BeingDeleted','on');
     % ------------
     % Set the position of the main panel based on the sliders values
     % ------------
-    function setMainPanelPositionBySliders(hObject,eventdata) 
+    function setMainPanelPositionBySliders(hObject,eventdata)
         newPos = get(mainPanel,'position');
         newPos(1) = 5 - get(sliderHoriz,'value');
         newPos(2) = -5 - get(sliderVert,'value');
@@ -347,7 +347,7 @@ waitfor(mainFigure,'BeingDeleted','on');
     % ------------
     % Update the sliders positions when the main figure is resized
     % ------------
-    function resizeMainFigure(hObject,eventdata) 
+    function resizeMainFigure(hObject,eventdata)
         % -------
         % Update the size and position of the sliders
         % -------
@@ -379,3 +379,4 @@ waitfor(mainFigure,'BeingDeleted','on');
 
 
 end
+

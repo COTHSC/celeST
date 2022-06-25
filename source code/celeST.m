@@ -63,6 +63,9 @@ fieldsIni{22} = 'day';
 fieldsIni{23} = 'year';
 fieldsIni{24} = 'class';
 
+test = [];
+
+
 % -------------------
 % Create the directories if need be
 % -------------------
@@ -171,7 +174,7 @@ colFtlWell = find(strcmp('well', listFilters));
 % List of videos
 % ----------
 editable = [true(1,12), false(1,6)];
-tableVideos = uitable('parent',mainPanel,'position',[0 30 mainPanelPosition(3)-330 yFilters-30],'RearrangeableColumn','on','ColumnEditable',false,'CellEditCallback', @tableEdit,'ColumnWidth','auto');
+tableVideos = uitable('parent',mainPanel,'position',[0 30 mainPanelPosition(3)-330 yFilters-30],'rearrangeablecolumns','on','columneditable',false,'CellEditCallback', @tableEdit,'ColumnWidth','auto');
 listVideosIdx = [];
 populateFilters
 set(mainFigure,'visible','on')
@@ -261,9 +264,9 @@ if fileToLog > 1; fclose(fileToLog); end
 
     function editTable(hObject,eventdata) %#ok<INUSD>
         if get(btnEdit,'value') == 1
-            set(tableVideos, 'ColumnEditable',editable);
+            set(tableVideos, 'columneditable',editable);
         else
-            set(tableVideos, 'ColumnEditable',false(1,length(fieldsIni)));
+            set(tableVideos, 'columneditable',false(1,length(fieldsIni)));
             checkSequences
             populateFilters
         end
@@ -299,7 +302,7 @@ if fileToLog > 1; fclose(fileToLog); end
             result = [['All (',num2str(length(result)) ,' values)'], sort(result)];
             set(flt.(fields{field}),'string',result);
         end
-        
+
         for field = 1:length(fields)
             if ~isfield(filterSelection, fields{field})
                 filterSelection.(fields{field}) = 1;
@@ -350,11 +353,11 @@ if fileToLog > 1; fclose(fileToLog); end
         currentVal = 0;
         listVideosIdx = zeros(1,length(fileDB));
         fields = fieldnames(flt);
-        
+
         for field = 1:length(fields)
             filterSelection.(fields{field}) = get(flt.(fields{field}),'value');
         end
-        
+
         for vv = 1:length(fileDB)
             flagKeep = true;
             for field = 1:length(fields)
@@ -620,7 +623,7 @@ if fileToLog > 1; fclose(fileToLog); end
                         currentVariable = str2num(currentNode.getTextContent) / 10^str2double(currentNode.getAttribute('precision')); %#ok<ST2NM>
                     otherwise
                 end
-                
+
                 if ~strcmp('glareZones',featName)
                     fileDB(idxVideo).(featName) = currentVariable;
                 else
@@ -700,7 +703,7 @@ if fileToLog > 1; fclose(fileToLog); end
             end
             seqNode.appendChild(currentNode);
         end
-        
+
     end
 
 end

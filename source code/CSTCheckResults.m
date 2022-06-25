@@ -2123,8 +2123,12 @@ waitfor(mainFigure,'BeingDeleted','on');
                 if all(validity(rangeDuration))
                     flagAtLeastOneMeasure = true;
                     % substract the average value first
+                    fprintf(1, ['This is before a fft\n', num2str(idxTimeInter), '\n', num2str(nbOfTimeIntervals), '\n']);
                     fourierTmp = abs(fft2(curvature(rangeDuration,3:end) - mean(mean(curvature(rangeDuration,3:end))))) * 4 / (nbOfPoints * length(rangeDuration));
-                    [tt,ss] = meshgrid(1:size(fourierTmp,1),1:size(fourierTmp,2));
+                    fprintf(1, ['This is after a fft\n', num2str(idxTimeInter), '\n']);
+
+
+                   [tt,ss] = meshgrid(1:size(fourierTmp,1),1:size(fourierTmp,2));
                     fourierTmp = fftshift(fourierTmp);
                     ttshifted = fftshift(tt);
                     newCenterTime = find(ttshifted(1,:)==1);
