@@ -74,7 +74,7 @@ uicontrol('parent',mainPanel,'style','pushbutton', 'string', '<<  Remove the sel
 uicontrol('parent',mainPanel,'style','pushbutton', 'string', 'Show graphs for these samples',        'position', [2*filterW yVideos+3*filterH-300 200 50], 'callback', @showGraphs);
 
 uicontrol('parent',mainPanel,'style','text', 'HorizontalAlignment', 'left','String','Double-click on a sample name (first line) to change it.','position',[4*filterW+80 yVideos+3*filterH+35 500 20]);
-tableSamples = uitable('parent',mainPanel,'position',[4*filterW-100 50 mainPnlW-4*filterW yVideos+3*filterH-10],'rearrangeablecolumns','on','columneditable',[],'CellEditCallback', @tableEdit, 'CellSelectionCallback', @tableSelect,'rowstriping','off');
+tableSamples = uitable('parent',mainPanel,'position',[4*filterW-100 50 mainPnlW-4*filterW yVideos+3*filterH-10],'rearrangeablecolumns','on','columneditable',false,'CellEditCallback', @tableEdit, 'CellSelectionCallback', @tableSelect,'rowstriping','off');
 selectedCellsData = [];
 
 if isempty(samplesDef)
