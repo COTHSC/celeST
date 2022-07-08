@@ -100,29 +100,4 @@
         <feature class="double" name="year" precision="4">[]</feature>
         <feature class="double" name="class" precision="4">[]</feature>
     </sequence>
-    <sequence number="5">
-        <feature class="char" name="name">Sample02</feature>
-        <feature class="char" name="author">h</feature>
-        <feature class="char" name="date">h</feature>
-        <feature class="char" name="gene">h</feature>
-        <feature class="double" name="trial" precision="4">NaN</feature>
-        <feature class="double" name="age" precision="4">NaN</feature>
-        <feature class="double" name="set" precision="4">NaN</feature>
-        <feature class="char" name="note">h</feature>
-        <feature class="char" name="directory">/home/jcts/Downloads/demos/demos/CeleST - demo with videos/samples/Sample02</feature>
-        <feature class="double" name="images" precision="4">5450000</feature>
-        <feature class="double" name="duration" precision="4">300000</feature>
-        <feature class="double" name="frames_per_second" precision="4">181667</feature>
-        <feature class="double" name="mm_per_pixel" precision="4">200</feature>
-        <feature class="double" name="well" precision="4">[3820000 2430000 2500000]</feature>
-        <feature class="logical" name="segmented">1</feature>
-        <feature class="double" name="worms" precision="4">50000</feature>
-        <feature class="logical" name="measured">1</feature>
-        <feature class="char" name="format">jpg</feature>
-        <feature class="double" name="experiment" precision="4">[]</feature>
-        <feature class="double" name="month" precision="4">[]</feature>
-        <feature class="double" name="day" precision="4">[]</feature>
-        <feature class="double" name="year" precision="4">[]</feature>
-        <feature class="double" name="class" precision="4">[]</feature>
-    </sequence>
 </sequences_database>
