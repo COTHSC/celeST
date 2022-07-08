@@ -1501,7 +1501,7 @@ waitfor(mainFigure,'BeingDeleted','on');
                     for ww = 1:nbOfWorms
                         longMean = mean(listOfWorms.lengthWorms(ww,~listOfWorms.lost(ww,:) & ~listOfWorms.overlapped(ww,:)));
                         longStd = std(listOfWorms.lengthWorms(ww,~listOfWorms.lost(ww,:) & ~listOfWorms.overlapped(ww,:)));
-                        measures.highThrDef(ww) = ceil(longMean + 3*longStd);
+                        measures.highThrDef(ww) = ceil(longMean + 3 * longStd);
                         if length(measures.highThr) < ww || measures.highThr(ww) == 0;
                             measures.highThr(ww) = measures.highThrDef(ww);
                         end
@@ -2099,7 +2099,7 @@ waitfor(mainFigure,'BeingDeleted','on');
             attenuation =[];
             return;
         end
-        fftw('planner', 'exhaustive');
+        fftw('planner', 'measure');
         nbOfFourTransformDurations = length(listOfFourTransformDurations);
         temporalFreq = zeros(1, nbOfFramesSup);
         spatialFreq = zeros(1, nbOfFramesSup);

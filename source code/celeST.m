@@ -7,6 +7,8 @@ function CeleST
 clear('global')
 global filenames fileDB traceOn timingOn timings timingsLabel timingsTime plotAllOn flagRobustness fileToLog flagAutomation flagInterfaceFreeze filterSelection colFtlWell mainPnlW mainPnlH fieldsIni listVideosIdx tableVideos;
 
+javaaddpath ("./Xerces-J-bin.2.12.2/xerces-2_12_2/xercesImpl.jar");
+javaaddpath ("./Xerces-J-bin.2.12.2/xerces-2_12_2/xml-apis.jar");
 
 % ===============
 % Global flags
@@ -523,7 +525,7 @@ if fileToLog > 1; fclose(fileToLog); end
             tmpfield.(fieldsIni{tmpFF}) = uicontrol('parent', figureAdd, 'style', 'text', 'string', '', 'position', [140, 500-20*tmpFF, 180, 20]);
         end
         set(tmpfield.directory,'callback',@addCheckDir);
-        waitfor(figureAdd,'BeingDeleted','on');
+        %waitfor(figureAdd,'BeingDeleted','on');
         if flagOK
             ensureUniqueNames
             populateFilters
@@ -560,27 +562,49 @@ if fileToLog > 1; fclose(fileToLog); end
             end
         end
         function addOK(hObject,eventdata) %#ok<INUSD>
+            % tmpNewVideo = struct(fileDB);
+            % tmpNewVideo(1).name = get(tmpfield.name,'string');
+            % tmpNewVideo(1).date = get(tmpfield.date,'string');
+            % tmpNewVideo(1).gene = get(tmpfield.gene,'string');
+            % tmpNewVideo(1).age = str2double(get(tmpfield.age,'string'));
+            % tmpNewVideo(1).set = str2double(get(tmpfield.set,'string'));
+            % tmpNewVideo(1).trial = str2double(get(tmpfield.trial,'string'));
+            % tmpNewVideo(1).note = get(tmpfield.note,'string');
+            % tmpNewVideo(1).author = get(tmpfield.author,'string');
+            % tmpNewVideo(1).directory = get(tmpfield.directory,'string');
+            % tmpNewVideo(1).images = str2double(get(tmpfield.images,'string'));
+            % tmpNewVideo(1).duration = str2double(get(tmpfield.duration,'string'));
+            % tmpNewVideo(1).frames_per_second = tmpNewVideo(1).images / tmpNewVideo(1).duration;
+            % tmpNewVideo(1).mm_per_pixel = 1;
+            % tmpNewVideo(1).well = [];
+            % tmpNewVideo(1).segmented = false;
+            % tmpNewVideo(1).worms = 0;
+            % tmpNewVideo(1).measured = false;
+            % tmpNewVideo(1).format = get(tmpfield.format,'string');
+            % tmpNewVideo(1).glareZones = cell(1,0);
             tmpNewVideo = struct(fileDB);
-            tmpNewVideo(1).name = get(tmpfield.name,'string');
-            tmpNewVideo(1).date = get(tmpfield.date,'string');
-            tmpNewVideo(1).gene = get(tmpfield.gene,'string');
-            tmpNewVideo(1).age = str2double(get(tmpfield.age,'string'));
-            tmpNewVideo(1).set = str2double(get(tmpfield.set,'string'));
-            tmpNewVideo(1).trial = str2double(get(tmpfield.trial,'string'));
-            tmpNewVideo(1).note = get(tmpfield.note,'string');
-            tmpNewVideo(1).author = get(tmpfield.author,'string');
-            tmpNewVideo(1).directory = get(tmpfield.directory,'string');
-            tmpNewVideo(1).images = str2double(get(tmpfield.images,'string'));
-            tmpNewVideo(1).duration = str2double(get(tmpfield.duration,'string'));
-            tmpNewVideo(1).frames_per_second = tmpNewVideo(1).images / tmpNewVideo(1).duration;
-            tmpNewVideo(1).mm_per_pixel = 1;
-            tmpNewVideo(1).well = [];
-            tmpNewVideo(1).segmented = false;
-            tmpNewVideo(1).worms = 0;
-            tmpNewVideo(1).measured = false;
-            tmpNewVideo(1).format = get(tmpfield.format,'string');
-            tmpNewVideo(1).glareZones = cell(1,0);
-            fileDB(end+1) = tmpNewVideo(1);
+            fileDB(end + 1).name = get(tmpfield.name,'string');
+            fileDB(end).date = get(tmpfield.date,'string');
+            fileDB(end).gene = get(tmpfield.gene,'string');
+            fileDB(end).age = str2double(get(tmpfield.age,'string'));
+            fileDB(end).set = str2double(get(tmpfield.set,'string'));
+            fileDB(end).trial = str2double(get(tmpfield.trial,'string'));
+            fileDB(end).note = get(tmpfield.note,'string');
+            fileDB(end).author = get(tmpfield.author,'string');
+            fileDB(end).directory = get(tmpfield.directory,'string');
+            fileDB(end).images = str2double(get(tmpfield.images,'string'));
+            fileDB(end).duration = str2double(get(tmpfield.duration,'string'));
+            fileDB(end).frames_per_second = tmpNewVideo(1).images / tmpNewVideo(1).duration;
+            fileDB(end).mm_per_pixel = 1;
+            fileDB(end).well = [];
+            fileDB(end).segmented = false;
+            fileDB(end).worms = 0;
+            fileDB(end).measured = false;
+            fileDB(end).format = get(tmpfield.format,'string');
+            fileDB(end).glareZones = cell(1,0);
+            % fprintf(1, ['This is then end: ', fileDB(end).name , '\n']);
+            % fprintf(1, ['This is then end: ', fileDB(2).name , '\n']);
+
             flagOK = true;
             close(figureAdd);
         end
@@ -641,8 +665,11 @@ if fileToLog > 1; fclose(fileToLog); end
         % ---------
         % Create an XML root node
         % ---------
-        docNode = com.mathworks.xml.XMLUtils.createDocument('sequences_database');
-        docRootNode = docNode.getDocumentElement;
+        docNode = javaObject ("org.apache.xerces.dom.DocumentImpl");
+        %docNode = com.mathworks.xml.XMLUtils.createDocument('sequences_database');
+        docRootNode = docNode.createElement("sequences_database");
+        docNode.appendChild (docRootNode);
+
         if nargin < 2; precision = 4; end
         factor = 10^precision;
         h = waitbar(0,'Saving the database...');
@@ -656,6 +683,7 @@ if fileToLog > 1; fclose(fileToLog); end
             % ---------
             seqNode = docNode.createElement('sequence');
             seqNode.setAttribute('number', int2str(seq));
+
             % ---------
             % retrieve the labels for the elements stored
             % ---------
@@ -666,12 +694,40 @@ if fileToLog > 1; fclose(fileToLog); end
                         currentValue = fileDB(seq).(labels{lbl}){item};
                         currentNode = docNode.createElement('feature');
                         currentNode.setAttribute('cell', 'true');
-                        writeNode
-                    end
+                        %writeNode
+                        currentNode.setAttribute('name', "test");
+                        currentClass = class(currentValue);
+                        currentNode.setAttribute('class', currentClass);
+                        switch currentClass
+                            case 'logical'
+                                currentNode.setTextContent(mat2str(int8(currentValue)));
+                            case 'char'
+                                currentNode.setTextContent(currentValue);
+                            case 'double'
+                                currentNode.setAttribute('precision', num2str(precision));
+                                currentNode.setTextContent(mat2str(round(factor * currentValue)));
+                            otherwise
+                        end
+                        seqNode.appendChild(currentNode);
+                end
                 else
                     currentValue = fileDB(seq).(labels{lbl});
                     currentNode = docNode.createElement('feature');
-                    writeNode
+                    currentNode.setAttribute('name', labels{lbl});
+                    currentClass = class(currentValue);
+                    currentNode.setAttribute('class', currentClass);
+                    switch currentClass
+                        case 'logical'
+                            currentNode.setTextContent(mat2str(int8(currentValue)));
+                        case 'char'
+                            currentNode.setTextContent(currentValue);
+                        case 'double'
+                            currentNode.setAttribute('precision', num2str(precision));
+                            currentNode.setTextContent(mat2str(round(factor * currentValue)));
+                        otherwise
+                    end
+                    seqNode.appendChild(currentNode);
+                            %writeNode
                 end
             end
             % ---------
@@ -682,8 +738,10 @@ if fileToLog > 1; fclose(fileToLog); end
         % ---------
         % Save the sample XML document.
         % ---------
-        xmlwrite(xmlFileName,docNode);
+        xmlwrite (xmlFileName,docNode);
         close(h)
+
+
         function writeNode
             % ---------
             % create a new node for the feature
